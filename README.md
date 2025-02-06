@@ -18,7 +18,7 @@ SmartPrep is an AI-powered study companion designed to help students optimize th
 - **Backend**: Node.js, Express.js
 - **Database**: MongoDB
 - **Authentication**: Firebase Auth
-- **AI Integration**: OpenAI API via OpenRouter
+- **AI Integration**: OpenAI API and Others via OpenRouter
 - **Deployment**: Vercel (Frontend), Railway/Render (Backend)
 
 ## 📥 Installation
