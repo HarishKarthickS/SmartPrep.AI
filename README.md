@@ -149,7 +149,7 @@ We welcome contributions! Follow these steps to join the adventure:
 This project is licensed under the **MIT License**.
 
 ## 📬 Contact
-For any inquiries or ideas, feel free to reach out via [your email] or open an issue in the repository.
+For any inquiries or ideas, feel free to reach out via harish.s@kalvium.community or open an issue in the repository.
 
 Happy Learning with SmartPrep! 🚀🎓
 
