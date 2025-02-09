@@ -1,0 +1,18 @@
+{
+  "name": "SmartPrep.Ai",
+  "short_name": "SmartPrep",
+  "icons": [
+    {
+      "src": "https://cdn.builder.io/api/v1/image/assets/TEMP/7a61c456db2d140b6cd59cf12f5fcf71accbfcbbe0a54f71e7d93005240461e2?placeholderIfAbsent=true&apiKey=067c5bb5a47e48ceb34000b3d7a35b79",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://cdn.builder.io/api/v1/image/assets/TEMP/7a61c456db2d140b6cd59cf12f5fcf71accbfcbbe0a54f71e7d93005240461e2?placeholderIfAbsent=true&apiKey=067c5bb5a47e48ceb34000b3d7a35b79",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}
