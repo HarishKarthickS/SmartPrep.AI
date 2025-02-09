@@ -82,7 +82,7 @@ cd smartprep
     ```
 2. Install dependencies:
     ```sh
-    npm install
+    yarn
     ```
 3. Create a `.env` file and add:
     ```
@@ -91,7 +91,7 @@ cd smartprep
     ```
 4. Start the frontend:
     ```sh
-    npm run dev
+    yarn run dev
     ```
 
 ## 🚀 Usage
