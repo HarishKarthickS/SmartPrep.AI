@@ -27,7 +27,7 @@ Welcome to **SmartPrep**, the ultimate AI-powered study companion and AI Studio 
 - **Collaborative Study Groups**
 
 ## 🏗️ Tech Stack
-- **Frontend**: React, TailwindCSS
+- **Frontend**: Next, TailwindCSS
 - **Backend**: Node.js, Express.js
 - **Database**: MongoDB
 - **Authentication**: Firebase Auth
