@@ -2,6 +2,9 @@
   "name": "SmartPrep",
   "private": false,
   "license": "mit",
+  "husky": {
+    "gitDir": "../.git"
+  },
   "scripts": {
     "mask": "npx tsx app/masks/build.ts",
     "mask:watch": "npx watch \"yarn mask\" app/masks",
