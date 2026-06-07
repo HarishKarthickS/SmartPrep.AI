@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
-import { Send, Square, Sparkles } from 'lucide-react';
+import React, { useRef, useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, Square, Sparkles, CornerDownLeft, Paperclip, Loader2, X } from 'lucide-react';
 import { Button } from '../ui/button';
+import { cn } from '../../lib/utils/cn';
 
 interface ChatInputProps {
   value: string;
@@ -10,6 +12,8 @@ interface ChatInputProps {
   onSubmit: () => void;
   isStreaming: boolean;
   onAbort?: () => void;
+  onFileAttach?: (file: File) => void;
+  isProcessingFile?: boolean;
   placeholder?: string;
 }
 
@@ -19,15 +23,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onSubmit,
   isStreaming,
   onAbort,
-  placeholder = 'Ask anything or paste study topics...'
+  onFileAttach,
+  isProcessingFile = false,
+  placeholder = 'Ask SmartPrep anything...'
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-expand height
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-
     textarea.style.height = 'auto';
     textarea.style.height = `${Math.min(textarea.scrollHeight, 240)}px`;
   }, [value]);
@@ -39,56 +44,106 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onFileAttach) {
+      onFileAttach(file);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
-    <div className="relative border border-border bg-card rounded-lg shadow-sm focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all p-2 flex flex-col space-y-2 select-none">
-      <textarea
-        ref={textareaRef}
-        rows={1}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        disabled={isStreaming && !onAbort}
-        className="w-full bg-transparent outline-none resize-none text-sm text-foreground placeholder:text-muted-foreground min-h-[44px] py-2 px-3.5 max-h-[240px] leading-relaxed font-sans pr-16"
-      />
+    <div className="relative w-full">
+      <div className={cn(
+        "relative bg-card rounded-[24px] border border-border/60 p-2 transition-all duration-300 shadow-sm",
+        "focus-within:border-primary/40 focus-within:shadow-md"
+      )}>
+        <textarea
+          ref={textareaRef}
+          rows={1}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={isStreaming && !onAbort}
+          className="w-full bg-transparent outline-none resize-none text-[14px] text-foreground placeholder:text-muted-foreground/40 min-h-[52px] py-4 px-5 max-h-[240px] leading-relaxed font-medium pr-14 custom-scrollbar"
+        />
 
-      <div className="flex items-center justify-between border-t border-border/40 pt-2 px-1 text-xs text-muted-foreground select-none">
-        <div className="flex items-center space-x-1.5 opacity-80 pl-2">
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
-          <span>Press Enter to send, Shift+Enter for new line</span>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          {/* Character counters if needed, or simple status indicators */}
-          {value.length > 0 && (
-            <span className="text-[10px] pr-2 opacity-60">
-              {value.length} characters
-            </span>
-          )}
-
-          {isStreaming && onAbort ? (
+        <div className="h-11 flex items-center justify-between px-4 pb-1">
+          <div className="flex items-center space-x-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept=".pdf,.txt,.md"
+              onChange={handleFileChange}
+            />
             <Button
-              variant="destructive"
-              size="sm"
-              onClick={onAbort}
-              className="h-8 px-3 text-xs font-semibold flex items-center space-x-1.5"
-            >
-              <Square className="h-3 w-3 fill-current" />
-              <span>Stop</span>
-            </Button>
-          ) : (
-            <Button
-              variant="primary"
+              variant="ghost"
               size="icon"
-              disabled={!value.trim() || isStreaming}
-              onClick={onSubmit}
-              className="h-8 w-8 rounded-md"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isStreaming || isProcessingFile}
+              className="h-9 w-9 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
+              title="Attach document (PDF, TXT, MD)"
             >
-              <Send className="h-3.5 w-3.5" />
+              {isProcessingFile ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Paperclip className="h-4 w-4" />
+              )}
             </Button>
-          )}
+
+            <div className="flex items-center space-x-1.5 px-2 py-1 rounded-lg bg-secondary/50 border border-border/20 text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.2em]">
+              <CornerDownLeft className="h-2.5 w-2.5" />
+              <span className="leading-none">Send</span>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <AnimatePresence mode="wait">
+              {isStreaming && onAbort ? (
+                <motion.div
+                  key="stop-btn"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                >
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={onAbort}
+                    className="h-8 px-3 rounded-xl font-bold flex items-center justify-center space-x-2 shadow-none"
+                  >
+                    <Square className="h-3 w-3 fill-current" />
+                    <span className="text-[10px] uppercase tracking-wider leading-none">Stop</span>
+                  </Button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="send-btn"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                >
+                  <Button
+                    variant="primary"
+                    size="icon"
+                    disabled={!value.trim() || isStreaming}
+                    onClick={onSubmit}
+                    className={cn(
+                      "h-9 w-9 rounded-xl transition-all shadow-none flex items-center justify-center",
+                      value.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground/50 grayscale opacity-30"
+                    )}
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </div>
   );
 };
+

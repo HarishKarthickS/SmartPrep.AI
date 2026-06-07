@@ -7,49 +7,14 @@ export interface StreamOptions {
   messages: ChatMessage[];
   temperature?: number;
   signal?: AbortSignal;
-  onChunk: (chunk: string) => void;
+  sessionId?: string;
+  userId?: string;
+  onChunk: (chunk: string, reasoning?: string) => void;
   onError: (error: string) => void;
   onStart?: () => void;
 }
 
-export const defaultModelPresets: OpenRouterModel[] = [
-  {
-    id: 'google/gemini-flash-1.5',
-    name: 'Gemini 1.5 Flash (Preset)',
-    description: 'Fast, lightweight, highly capable model from Google with large context window.',
-    contextLength: 1000000,
-  },
-  {
-    id: 'openai/gpt-4o-mini',
-    name: 'GPT-4o Mini (Preset)',
-    description: 'Cost-efficient, super fast intelligence from OpenAI.',
-    contextLength: 128000,
-  },
-  {
-    id: 'openai/gpt-4o',
-    name: 'GPT-4o (Preset)',
-    description: 'OpenAI flagship high-performance model for complex reasoning and tasks.',
-    contextLength: 128000,
-  },
-  {
-    id: 'anthropic/claude-3.5-sonnet',
-    name: 'Claude 3.5 Sonnet (Preset)',
-    description: 'State of the art reasoning, coding, and writing from Anthropic.',
-    contextLength: 200000,
-  },
-  {
-    id: 'deepseek/deepseek-chat',
-    name: 'DeepSeek V3 (Preset)',
-    description: 'Advanced reasoning, coding, and logical capacity.',
-    contextLength: 64000,
-  },
-  {
-    id: 'meta-llama/llama-3.1-70b-instruct',
-    name: 'Llama 3.1 70B (Preset)',
-    description: 'Highly capable open-source instruction-tuned model from Meta.',
-    contextLength: 131000,
-  }
-];
+export const defaultModelPresets: OpenRouterModel[] = [];
 
 export async function fetchModels(apiKey?: string): Promise<OpenRouterModel[]> {
   try {
@@ -76,13 +41,20 @@ export async function fetchModels(apiKey?: string): Promise<OpenRouterModel[]> {
         pricing: m.pricing ? {
           prompt: m.pricing.prompt,
           completion: m.pricing.completion
+        } : undefined,
+        architecture: m.architecture ? {
+          modality: m.architecture.modality,
+          tokenizer: m.architecture.tokenizer,
+          instruct_type: m.architecture.instruct_type,
+          input_modalities: m.architecture.input_modalities,
+          output_modalities: m.architecture.output_modalities
         } : undefined
       }));
     }
-    return defaultModelPresets;
+    return [];
   } catch (e) {
-    console.error('Error fetching models, returning presets:', e);
-    return defaultModelPresets;
+    console.error('Error fetching models:', e);
+    return [];
   }
 }
 
@@ -92,6 +64,8 @@ export async function streamChatCompletions({
   messages,
   temperature,
   signal,
+  sessionId,
+  userId,
   onChunk,
   onError,
   onStart
@@ -99,23 +73,36 @@ export async function streamChatCompletions({
   try {
     if (onStart) onStart();
 
-    // Map messages to format expected by OpenAI/OpenRouter (omit system prompts if empty, format role/content)
-    const formattedMessages = messages.map(({ role, content }) => ({
-      role,
-      content,
-    }));
+    // Map and sanitize messages to format expected by OpenAI/OpenRouter
+    const formattedMessages = messages
+      .filter(m => m.content && m.content.trim().length > 0)
+      .map(({ role, content }) => ({
+        role,
+        content: content
+          .trim()
+          .replace(/User Safety:\s*safe\n?/gi, '')
+          .replace(/Response Safety:\s*safe\n?/gi, ''),
+      }));
+
+    if (formattedMessages.length === 0) {
+      throw new Error('No valid message content to send.');
+    }
 
     const response = await fetch('/api/openrouter/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
+        'X-OpenRouter-Experimental-Metadata': 'enabled', 
       },
       body: JSON.stringify({
         model,
         messages: formattedMessages,
-        temperature,
+        temperature: temperature ?? 0.7,
         stream: true,
+        session_id: sessionId,
+        user: userId,
+        stream_options: { include_usage: true },
       }),
       signal,
     });
@@ -146,7 +133,6 @@ export async function streamChatCompletions({
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
       
-      // Save the last incomplete line to process in the next chunk
       buffer = lines.pop() || '';
 
       for (const line of lines) {
@@ -162,12 +148,14 @@ export async function streamChatCompletions({
 
           try {
             const parsed = JSON.parse(dataText);
-            const content = parsed.choices?.[0]?.delta?.content || '';
-            if (content) {
-              onChunk(content);
+            const delta = parsed.choices?.[0]?.delta;
+            const content = delta?.content || '';
+            const reasoning = delta?.reasoning || '';
+            
+            if (content || reasoning) {
+              onChunk(content, reasoning);
             }
           } catch (err) {
-            // Keep parsing other lines if a single line fails to parse
             console.debug('Failed to parse line JSON:', dataText, err);
           }
         }

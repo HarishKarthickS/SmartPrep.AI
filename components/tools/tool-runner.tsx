@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Play, Copy, Check, FileText, ArrowLeft, RotateCcw, BrainCircuit, Square } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Play, Copy, Check, FileText, ArrowLeft, RotateCcw, BrainCircuit, Square, Sparkles, ChevronLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AITool } from '../../types/tools';
@@ -12,6 +13,8 @@ import { streamChatCompletions } from '../../lib/openrouter/client';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Select } from '../ui/select';
+import { cn } from '../../lib/utils/cn';
+import { fadeUp, springTransition } from '../../lib/utils/animations';
 
 interface ToolRunnerProps {
   tool: AITool;
@@ -25,254 +28,191 @@ export const ToolRunner: React.FC<ToolRunnerProps> = ({ tool, onBack }) => {
 
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [selectedModel, setSelectedModel] = useState(tool.modelPreset || settings.defaultModel);
+  const [availableModels, setAvailableModels] = useState<{id: string, name: string}[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [output, setOutput] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [controller, setController] = useState<AbortController | null>(null);
 
-  // Initialize form default values
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        const models = await fetchModels(settings.apiKey);
+        if (models && models.length > 0) {
+          setAvailableModels(models.map(m => ({ id: m.id, name: m.name })));
+        }
+      } catch (e) {
+        console.error('Failed to load models for tool:', e);
+      }
+    };
+    loadModels();
+  }, [settings.apiKey]);
+
   useEffect(() => {
     const defaults: Record<string, string> = {};
-    tool.inputs.forEach((input) => {
-      defaults[input.id] = input.defaultValue || '';
-    });
+    tool.inputs.forEach((input) => { defaults[input.id] = input.defaultValue || ''; });
     setFormValues(defaults);
     setOutput('');
   }, [tool]);
 
-  const handleInputChange = (id: string, value: string) => {
-    setFormValues((prev) => ({ ...prev, [id]: value }));
-  };
+  const handleInputChange = (id: string, value: string) => { setFormValues((prev) => ({ ...prev, [id]: value })); };
 
   const handleAbort = () => {
-    if (controller) {
-      controller.abort();
-      setController(null);
-      setIsStreaming(false);
-      showToast('Canceled', 'info', 'AI generation halted.');
-    }
+    if (controller) { controller.abort(); setController(null); setIsStreaming(false); showToast('Canceled', 'info', 'Generation stopped.'); }
   };
 
   const handleRunTool = async () => {
-    // Validate inputs
     for (const input of tool.inputs) {
-      if (!formValues[input.id]?.trim()) {
-        showToast('Input required', 'error', `Please fill out the "${input.label}" field.`);
-        return;
-      }
+      if (!formValues[input.id]?.trim()) { showToast('Required', 'error', `${input.label} is missing.`); return; }
     }
+    if (!settings.apiKey) { showToast('API Key Required', 'error', 'Configure your API key in Settings.'); return; }
 
-    if (!settings.apiKey) {
-      showToast('API Key Required', 'error', 'Set your OpenRouter Key in Settings first.');
-      return;
-    }
-
-    setIsStreaming(true);
-    setOutput('');
-
-    // Compile Prompt
+    setIsStreaming(true); setOutput('');
     let userPrompt = tool.userPromptTemplate;
-    Object.entries(formValues).forEach(([key, val]) => {
-      userPrompt = userPrompt.replace(new RegExp(`{{${key}}}`, 'g'), val);
-    });
-
+    Object.entries(formValues).forEach(([key, val]) => { userPrompt = userPrompt.replace(new RegExp(`{{${key}}}`, 'g'), val); });
     const messages = [
       { id: 'sys', role: 'system' as const, content: tool.systemPrompt, timestamp: Date.now() },
       { id: 'usr', role: 'user' as const, content: userPrompt, timestamp: Date.now() },
     ];
-
-    const abortCtrl = new AbortController();
-    setController(abortCtrl);
-
+    const abortCtrl = new AbortController(); setController(abortCtrl);
     let currentResponse = '';
 
     await streamChatCompletions({
-      apiKey: settings.apiKey,
-      model: selectedModel,
-      messages,
-      temperature: 0.6,
-      signal: abortCtrl.signal,
-      onChunk: (chunk) => {
-        currentResponse += chunk;
-        setOutput(currentResponse);
-      },
-      onError: (err) => {
-        setOutput(`⚠️ **OpenRouter API Error:**\n\n> ${err}\n\n*Verify your setup in Settings.*`);
-        showToast('Execution Error', 'error', err);
-        setIsStreaming(false);
-        setController(null);
-      },
-      onStart: () => {
-        // Stream initialized
-      }
+      apiKey: settings.apiKey, model: selectedModel, messages, temperature: 0.6, signal: abortCtrl.signal,
+      onChunk: (chunk) => { currentResponse += chunk; setOutput(currentResponse); },
+      onError: (err) => { setOutput(`⚠️ **Error:** ${err}`); showToast('Error', 'error', err); setIsStreaming(false); setController(null); },
+      onStart: () => {}
     });
 
-    setIsStreaming(false);
-    setController(null);
-    if (currentResponse) {
-      showToast('Generation Finished', 'success', `${tool.name} ran successfully!`);
-    }
-  };
-
-  const handleCopyOutput = () => {
-    navigator.clipboard.writeText(output);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    showToast('Copied', 'success', 'Markdown output copied to clipboard.');
+    setIsStreaming(false); setController(null);
+    if (currentResponse) showToast('Success', 'success', `${tool.name} completed.`);
   };
 
   const handleSaveAsNote = () => {
     const topic = formValues['topic'] || formValues['subject'] || formValues['content']?.slice(0, 20) || 'Tool output';
-    const noteId = addNote({
-      title: `${tool.name}: ${topic.trim()}`,
-      content: output,
-      tags: ['study-tool', tool.id],
-    });
-
-    if (noteId) {
-      showToast('Saved to Notes', 'success', 'Saved permanently to your study collection.');
-    }
+    const noteId = addNote({ title: `${tool.name}: ${topic.trim()}`, content: output, tags: ['study-tool', tool.id] });
+    if (noteId) showToast('Saved', 'success', 'Added to study notes.');
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background overflow-hidden text-xs">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col h-full bg-transparent overflow-hidden">
       
-      {/* Top Header */}
-      <div className="h-14 border-b border-border px-6 flex items-center justify-between flex-shrink-0 bg-card select-none">
-        <div className="flex items-center space-x-3">
-          <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+      {/* Header */}
+      <div className="h-16 px-8 flex items-center justify-between flex-shrink-0 glass-morphism bg-white/5 border-none z-10">
+        <div className="flex items-center space-x-4">
+          <button onClick={onBack} className="w-10 h-10 rounded-2xl glass-morphism flex items-center justify-center text-muted-foreground hover:text-foreground hover:scale-105 transition-all">
+            <ChevronLeft className="h-5 w-5" />
+          </button>
           <div>
-            <h2 className="text-sm font-semibold text-foreground">{tool.name}</h2>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{tool.description}</p>
+            <h2 className="text-[15px] font-bold text-foreground">{tool.name}</h2>
+            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mt-0.5">{tool.description}</p>
           </div>
         </div>
       </div>
 
-      {/* Two panels workspace content */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <div className="flex-1 flex overflow-hidden">
         
-        {/* Left Side: Form Inputs */}
-        <div className="w-full md:w-[360px] border-b md:border-b-0 md:border-r border-border p-5 flex flex-col space-y-5 overflow-y-auto select-none">
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 text-foreground font-semibold">
-              <BrainCircuit className="h-4 w-4 text-primary" />
-              <span>Input Parameters</span>
+        {/* Input Panel */}
+        <div className="w-full md:w-[380px] flex flex-col glass-morphism bg-white/5 border-none m-4 mr-2 rounded-[32px] overflow-hidden">
+          <div className="p-6 border-b border-white/5 flex items-center space-x-3 bg-white/5">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-lg shadow-primary/5">
+              <BrainCircuit className="h-4.5 w-4.5" />
             </div>
+            <h3 className="font-bold text-foreground tracking-tight">Task Parameters</h3>
+          </div>
 
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
             {tool.inputs.map((input) => (
-              <div key={input.id} className="space-y-1">
+              <div key={input.id} className="space-y-2">
+                <label className="text-[11px] font-black text-primary uppercase tracking-[0.2em] ml-2">{input.label}</label>
                 {input.type === 'textarea' ? (
-                  <div className="flex flex-col space-y-1.5">
-                    <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      {input.label}
-                    </label>
-                    <textarea
-                      rows={5}
-                      value={formValues[input.id] || ''}
-                      onChange={(e) => handleInputChange(input.id, e.target.value)}
-                      placeholder={input.placeholder}
-                      disabled={isStreaming}
-                      className="w-full bg-card border border-border rounded p-3 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground/60 resize-y leading-relaxed font-sans"
-                    />
-                  </div>
-                ) : input.type === 'select' ? (
-                  <Select
-                    label={input.label}
-                    value={formValues[input.id] || ''}
-                    onChange={(e) => handleInputChange(input.id, e.target.value)}
-                    options={input.options || []}
-                    disabled={isStreaming}
+                  <textarea
+                    rows={6} value={formValues[input.id] || ''} onChange={(e) => handleInputChange(input.id, e.target.value)}
+                    placeholder={input.placeholder} disabled={isStreaming}
+                    className="w-full bg-white/5 border border-white/5 rounded-[24px] p-5 text-sm font-medium outline-none focus:ring-1 focus:ring-primary/40 focus:bg-white/10 transition-all resize-none"
                   />
                 ) : (
-                  <Input
-                    label={input.label}
-                    placeholder={input.placeholder}
-                    value={formValues[input.id] || ''}
-                    onChange={(e) => handleInputChange(input.id, e.target.value)}
-                    disabled={isStreaming}
+                  <input
+                    value={formValues[input.id] || ''} onChange={(e) => handleInputChange(input.id, e.target.value)}
+                    placeholder={input.placeholder} disabled={isStreaming}
+                    className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-sm font-medium outline-none focus:ring-1 focus:ring-primary/40 focus:bg-white/10 transition-all"
                   />
                 )}
               </div>
             ))}
           </div>
 
-          <div className="space-y-3 pt-3 border-t border-border mt-auto">
-            <Select
-              label="Selected Intelligence Model"
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              options={[{ label: 'Gemini 1.5 Flash', value: 'google/gemini-flash-1.5' }, { label: 'GPT-4o Mini', value: 'openai/gpt-4o-mini' }, { label: 'Claude 3.5 Sonnet', value: 'anthropic/claude-3.5-sonnet' }]}
-              disabled={isStreaming}
-            />
+          <div className="p-6 border-t border-white/5 space-y-4 bg-white/5">
+            <div className="space-y-2">
+              <label className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-2">Intelligence Profile</label>
+              <select 
+                value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}
+                className="w-full bg-background border border-border/60 rounded-2xl p-4 text-xs font-bold uppercase tracking-widest outline-none focus:ring-1 focus:ring-primary/40 appearance-none transition-all text-foreground"
+              >
+                {availableModels.length > 0 ? (
+                  availableModels.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))
+                ) : (
+                  <>
+                    <option value={selectedModel}>{selectedModel || 'Loading Models...'}</option>
+                  </>
+                )}
+              </select>
+            </div>
 
             {isStreaming ? (
-              <Button
-                variant="destructive"
-                onClick={handleAbort}
-                className="w-full font-semibold flex items-center justify-center space-x-2"
-              >
+              <Button variant="destructive" onClick={handleAbort} className="w-full h-12 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] shadow-lg shadow-destructive/20 flex items-center justify-center space-x-2 transition-all">
                 <Square className="h-4 w-4 fill-current" />
                 <span>Stop Generation</span>
               </Button>
             ) : (
-              <Button
-                onClick={handleRunTool}
-                className="w-full font-semibold flex items-center justify-center space-x-2"
-              >
+              <Button onClick={handleRunTool} className="w-full h-12 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-primary/20 flex items-center justify-center space-x-2 transition-all hover:scale-105 active:scale-95">
                 <Play className="h-4 w-4 fill-current" />
-                <span>Run Studio Tool</span>
+                <span>Execute Formula</span>
               </Button>
             )}
           </div>
         </div>
 
-        {/* Right Side: Streaming Canvas */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-background relative select-text">
-          {output ? (
-            <div className="flex-1 flex flex-col overflow-hidden">
-              
-              {/* Output Actions Tool bar */}
-              <div className="h-10 border-b border-border bg-card/60 px-5 flex items-center justify-end space-x-3 flex-shrink-0 select-none">
-                <button
-                  onClick={handleCopyOutput}
-                  className="flex items-center space-x-1.5 text-[11px] text-muted-foreground hover:text-foreground font-semibold cursor-pointer"
-                >
-                  {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-                  <span>{copied ? 'Copied' : 'Copy Output'}</span>
-                </button>
-
-                <button
-                  onClick={handleSaveAsNote}
-                  className="flex items-center space-x-1.5 text-[11px] text-muted-foreground hover:text-foreground font-semibold cursor-pointer"
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  <span>Save as Note</span>
-                </button>
-              </div>
-
-              {/* Render output stream content */}
-              <div className="flex-1 overflow-y-auto px-8 py-6 prose prose-slate dark:prose-invert max-w-none text-sm text-foreground/90 font-normal leading-relaxed">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {output}
-                </ReactMarkdown>
-              </div>
-
-            </div>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center select-none">
-              <Play className="h-10 w-10 text-muted-foreground/30 mb-3 animate-pulse-slow" />
-              <h3 className="text-sm font-semibold text-foreground">Awaiting Studio Run</h3>
-              <p className="text-[11px] text-muted-foreground max-w-xs mt-1 leading-normal">
-                Fill in the parameters on the left and click "Run Studio Tool" to stream your customized study outputs.
-              </p>
-            </div>
-          )}
+        {/* Output Panel */}
+        <div className="flex-1 flex flex-col glass-morphism bg-white/5 border-none m-4 ml-2 rounded-[32px] overflow-hidden relative">
+          <AnimatePresence mode="wait">
+            {output ? (
+              <motion.div key="output-ready" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={springTransition} className="flex-1 flex flex-col overflow-hidden">
+                <div className="h-14 px-8 border-b border-white/5 flex items-center justify-between flex-shrink-0 bg-white/5">
+                  <div className="flex items-center space-x-2 text-[10px] font-black text-primary uppercase tracking-[0.2em]">
+                    <Sparkles className="h-4 w-4" />
+                    <span>Intelligence Output</span>
+                  </div>
+                  <div className="flex space-x-3">
+                    <button onClick={() => { navigator.clipboard.writeText(output); setCopied(true); setTimeout(() => setCopied(false), 2000); showToast('Copied', 'success', 'Output copied.'); }} className="flex items-center space-x-2 text-[11px] font-bold text-muted-foreground hover:text-primary transition-all uppercase tracking-widest">
+                      {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                      <span>{copied ? 'Copied' : 'Copy'}</span>
+                    </button>
+                    <button onClick={handleSaveAsNote} className="flex items-center space-x-2 text-[11px] font-bold text-muted-foreground hover:text-primary transition-all uppercase tracking-widest border-l border-white/10 pl-3">
+                      <FileText className="h-4 w-4" />
+                      <span>Save as Note</span>
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto px-10 py-10 prose prose-slate dark:prose-invert max-w-none selection:bg-primary/20 custom-scrollbar">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{output}</ReactMarkdown>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div key="output-empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                <div className="w-16 h-16 rounded-3xl glass-morphism mb-6 flex items-center justify-center text-primary/30">
+                  <Play className="h-8 w-8 animate-pulse" />
+                </div>
+                <h3 className="text-lg font-bold text-foreground">Awaiting Execution</h3>
+                <p className="text-xs text-muted-foreground/60 max-w-xs mt-2">Configure the formula on the left and execute to see the AI intelligence results here.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
       </div>
-    </div>
+    </motion.div>
   );
 };
+
 export default ToolRunner;
+

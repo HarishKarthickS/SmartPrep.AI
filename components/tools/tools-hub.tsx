@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText,
   HelpCircle,
@@ -9,11 +10,16 @@ import {
   Calendar,
   Sparkles,
   Search,
-  BookOpen
+  BookOpen,
+  Wrench,
+  ChevronRight,
+  ArrowRight
 } from 'lucide-react';
 import { defaultTools } from '../../data/default-tools';
 import { AITool } from '../../types/tools';
 import { ToolRunner } from './tool-runner';
+import { cn } from '../../lib/utils/cn';
+import { fadeUp, staggerContainer, hoverScale, springTransition } from '../../lib/utils/animations';
 
 export const ToolsHub: React.FC = () => {
   const [selectedTool, setSelectedTool] = useState<AITool | null>(null);
@@ -34,81 +40,99 @@ export const ToolsHub: React.FC = () => {
   );
 
   if (selectedTool) {
-    return (
-      <ToolRunner tool={selectedTool} onBack={() => setSelectedTool(null)} />
-    );
+    return <ToolRunner tool={selectedTool} onBack={() => setSelectedTool(null)} />;
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background overflow-hidden text-xs">
+    <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
       
-      {/* Top Header */}
-      <div className="h-14 border-b border-border px-6 flex items-center justify-between flex-shrink-0 bg-card select-none">
-        <div>
-          <h2 className="text-sm font-semibold text-foreground">AI Tools Hub</h2>
-          <p className="text-[10px] text-muted-foreground mt-0.5">Accelerate your study workflow with pre-configured task formulas.</p>
+      {/* Header */}
+      <div className="h-16 px-8 flex items-center justify-between flex-shrink-0 bg-background/80 backdrop-blur-sm border-b border-border/40 z-10">
+        <div className="flex items-center space-x-4">
+          <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-primary">
+            <Wrench className="h-4.5 w-4.5" />
+          </div>
+          <div>
+            <h2 className="text-[14px] font-bold text-foreground">Intelligence Hub</h2>
+            <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest mt-0.5">Accelerate your workflow</p>
+          </div>
         </div>
 
-        {/* Local Search bar */}
-        <div className="relative flex items-center w-64">
-          <Search className="absolute left-3 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+        <div className="relative group w-72">
+          <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground/30 group-focus-within:text-primary transition-colors" />
           <input
             type="text"
-            placeholder="Search tools..."
+            placeholder="Search intelligence masks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-8.5 bg-muted/40 border border-border rounded-md pl-9 pr-3 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-muted-foreground transition-all"
+            className="w-full h-9 bg-secondary border border-border/40 rounded-xl pl-10 pr-4 text-[11px] font-medium outline-none focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/30"
           />
         </div>
       </div>
 
-      {/* Grid container */}
-      <div className="flex-1 overflow-y-auto p-6 md:p-8">
-        <div className="max-w-5xl mx-auto space-y-6">
+      <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="max-w-6xl mx-auto space-y-8">
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
+          <motion.div 
+            variants={staggerContainer} initial="initial" animate="animate"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+          >
             {filteredTools.map((tool) => (
-              <div
+              <motion.div
+                layout
+                variants={fadeUp}
                 key={tool.id}
                 onClick={() => setSelectedTool(tool)}
-                className="group p-5 bg-card border border-border rounded-lg shadow-sm hover:shadow-md hover:border-primary/40 hover:bg-primary/[0.01] transition-all duration-200 cursor-pointer flex flex-col justify-between min-h-[150px] relative overflow-hidden active:scale-[0.99] select-none"
+                className="group p-7 bg-card border border-border/60 rounded-[24px] cursor-pointer flex flex-col justify-between min-h-[200px] relative overflow-hidden transition-all duration-300 hover:border-primary/30 hover:shadow-sm"
               >
-                {/* Background decorative corner detail */}
-                <div className="absolute right-[-10px] bottom-[-10px] opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-200 pointer-events-none">
-                  {iconMap[tool.icon]}
-                </div>
-
-                <div className="space-y-2.5">
-                  <div className="bg-muted p-2.5 rounded-md w-fit flex items-center justify-center group-hover:bg-primary/10 transition-colors border border-border group-hover:border-primary/20">
+                <div className="space-y-4 relative z-10">
+                  <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center border border-border/40 group-hover:border-primary/20 transition-all shadow-none">
                     {iconMap[tool.icon]}
                   </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                  <div className="space-y-1.5">
+                    <h3 className="text-[14px] font-bold text-foreground tracking-tight group-hover:text-primary transition-colors">
                       {tool.name}
                     </h3>
-                    <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                    <p className="text-[12px] text-muted-foreground/70 leading-relaxed font-medium">
                       {tool.description}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-1.5 text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity mt-4">
-                  <span>Launch Tool</span>
-                  <Sparkles className="h-3 w-3" />
+                <div className="flex items-center justify-between pt-4 relative z-10">
+                  <div className="flex items-center space-x-2 text-[9px] font-black text-primary/40 uppercase tracking-[0.2em] group-hover:text-primary transition-colors">
+                    <span>Activate Mask</span>
+                    <Sparkles className="h-3 w-3" />
+                  </div>
+                  <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                    <ArrowRight className="h-3.5 w-3.5 text-primary" />
+                  </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
-          {filteredTools.length === 0 && (
-            <div className="text-center py-16 text-muted-foreground">
-              No matching AI tools found. Try searching another term.
-            </div>
-          )}
+          <AnimatePresence>
+            {filteredTools.length === 0 && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                className="text-center py-32 space-y-3"
+              >
+                <div className="w-12 h-12 rounded-xl bg-secondary mx-auto flex items-center justify-center text-muted-foreground/20">
+                  <Search className="h-6 w-6" />
+                </div>
+                <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                  No masks found matching "{searchQuery}"
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
     </div>
   );
 };
+
 export default ToolsHub;
+

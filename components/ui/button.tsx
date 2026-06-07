@@ -17,15 +17,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           'inline-flex items-center justify-center font-medium rounded-md transition-all active:scale-[0.98] outline-none disabled:opacity-50 disabled:pointer-events-none cursor-pointer',
           {
             // Variants
-            'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm shadow-primary/20': variant === 'primary',
+            'bg-primary text-primary-foreground hover:bg-primary/90 shadow-none': variant === 'primary',
             'bg-secondary text-secondary-foreground hover:bg-secondary/80': variant === 'secondary',
-            'hover:bg-muted text-foreground': variant === 'ghost',
-            'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm shadow-destructive/20': variant === 'destructive',
-            'border border-border bg-transparent hover:bg-muted text-foreground': variant === 'outline',
+            'hover:bg-secondary text-foreground': variant === 'ghost',
+            'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-none': variant === 'destructive',
+            'border border-border bg-transparent hover:bg-secondary text-foreground': variant === 'outline',
             
             // Sizes
-            'h-8 px-3 text-xs': size === 'sm',
-            'h-10 px-4 text-sm': size === 'md',
+            'h-8 px-3 text-[11px]': size === 'sm',
+            'h-10 px-4 text-[13px]': size === 'md',
             'h-12 px-6 text-base': size === 'lg',
             'h-9 w-9 p-0': size === 'icon',
           },

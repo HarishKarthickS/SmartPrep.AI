@@ -1,155 +1,66 @@
-# SmartPrep - AI-Powered Personalized Study Companion
+# SmartPrep AI Studio — Premium Intelligent Learning Workspace
 
 ## 📌 Overview
-Welcome to **SmartPrep**, the ultimate AI-powered study companion and AI Studio that transforms your learning journey into an engaging adventure! 🚀 Whether you're mastering challenging topics, prepping for exams, or exploring new ideas, SmartPrep leverages cutting-edge AI to help you learn faster, smarter, and with a splash of fun. Unlock personalized insights, generate smart notes, and harness the power of multiple advanced AI models—all designed to boost your academic success!
+Welcome to **SmartPrep AI Studio**, a premium, intelligent client-side AI learning and productivity workspace. Built for high-performance learning and exam preparation, SmartPrep transforms your study sessions into an engaging, AI-powered experience. Leverage cutting-edge models via OpenRouter, manage your personal knowledge library, and customize your AI tools — all in a privacy-focused, local-first environment.
 
-## 🚀 Features
-- **AI-Powered Summarization**: Instantly extract key points from lengthy study materials.
-- **Smart Notes**: Automatically generate concise notes from lectures and books.
-- **AI Tutor**: Enjoy personalized guidance that adapts to your unique learning style.
-- **Personalized Study Recommendations**: Get AI-driven suggestions tailored to your needs.
-- **Multiple Language Support**: Access study materials in the language of your choice.
-- **Seamless User Experience**: Experience a clean, responsive interface built with the MERN stack.
-- **Multi-Model AI Studio**: Tap into a variety of cutting-edge AI models, including:
-  - **GPT-4 Turbo**
-  - **Claude**
-  - **Mistral**
-  - **Gemini**
-  - **Llama**
-  - *and more!*
-- **Customizable Chat Masks**: Create, share, and debug chat tools using customizable prompt templates.
+## 🚀 Key Features
+- **Multi-Model AI Studio**: Seamlessly interact with the world's most advanced AI models (GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro, Llama 3, and more) via OpenRouter.
+- **Tools Hub (AI Masks)**: Create, share, and customize chat tools and "masks" using powerful prompt templates to fine-tune your learning experience.
+- **Smart Notes Board**: Organize and manage your study notes in a dedicated board designed for clarity and rapid recall.
+- **Library Board**: Maintain a centralized repository of your reference materials and documents.
+- **Local-First Architecture**: Your data stays where it belongs — in your browser. SmartPrep uses client-side state management for maximum privacy and speed.
+- **Responsive Premium UI**: A clean, high-performance interface built with Tailwind CSS v4 and Framer Motion for smooth transitions and an intuitive experience.
 
-## 🔮 Future Enhancements
-- **Interactive Quizzes**: Generate quizzes to test your knowledge (coming soon!).
-- **Real-Time Progress Tracking**: Monitor your learning journey with detailed analytics (coming soon!).
-- **Flashcard Generation**
-- **AI-Powered Doubt Solving**
-- **Collaborative Study Groups**
+## 🏗️ Modern Tech Stack
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router), [React 19](https://react.dev/)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/), [Framer Motion](https://www.framer.com/motion/)
+- **State Management**: [Zustand](https://github.com/pmndrs/zustand) (with local persistence)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Markdown Rendering**: [React Markdown](https://github.com/remarkjs/react-markdown)
+- **AI Integration**: [OpenRouter API](https://openrouter.ai/)
 
-## 🏗️ Tech Stack
-- **Frontend**: Next, TailwindCSS
-- **Backend**: Node.js, Express.js
-- **Database**: MongoDB
-- **Authentication**: Firebase Auth
-- **AI Integration**: OpenAI API and other models via OpenRouter
-- **Deployment**: Vercel (Frontend), Railway/Render (Backend)
-
-## 📥 Installation
+## 📥 Getting Started
 
 ### Prerequisites
-Ensure you have the following installed:
-- Node.js (v16 or later)
-- MongoDB (local or cloud-based)
-- A Firebase account for authentication
+- Node.js (v18 or later recommended)
+- An [OpenRouter API Key](https://openrouter.ai/keys) (can be configured inside the app)
 
-### Clone the Repository
-```sh
-git clone https://github.com/HarishKarthickS/SmartPrep.AI.git
-cd smartprep
-```
-
-### Backend Setup
-1. Navigate to the backend folder:
-    ```sh
-    cd backend
-    ```
-2. Install dependencies:
-    ```sh
-    npm install
-    ```
-3. Create a `.env` file and add the following:
-    ```
-    PORT=5000
-    MONGO_URL=your_mongodb_connection_string
-    JWT_PRIVATE_KEY=your_jwt_secret
-    OPENAI_API_KEY=your_openai_api_key
-    FIREBASE_CONFIG=your_firebase_credentials
-    CLAUDE_API_KEY=your_claude_api_key
-    MISTRAL_API_KEY=your_mistral_api_key
-    GEMINI_API_KEY=your_gemini_api_key
-    LLAMA_API_KEY=your_llama_api_key
-
-    ```
-4. Start the backend server:
-    ```sh
-    npm run dev
-    ```
-
-### Frontend Setup
-1. Navigate to the frontend folder:
-    ```sh
-    cd ../frontend
-    ```
-2. Install dependencies:
-    ```sh
-    yarn
-    ```
-3. Create a `.env` file and add:
-    ```
-    VITE_API_URL=http://localhost:5000
-    FIREBASE_CONFIG=your_firebase_credentials
-    ```
-4. Start the frontend:
-    ```sh
-    yarn run dev
-    ```
+### Installation
+1. **Clone the Repository**
+   ```sh
+   git clone https://github.com/HarishKarthickS/SmartPrep.AI.git
+   cd SmartPrep.AI
+   ```
+2. **Install Dependencies**
+   ```sh
+   npm install
+   ```
+3. **Start the Development Server**
+   ```sh
+   npm run dev
+   ```
+4. **Access the Application**
+   Open your browser and navigate to `http://localhost:3000`.
 
 ## 🚀 Usage
-1. Open the app in your browser at `http://localhost:5173`.
-2. Sign up or log in using Firebase authentication.
-3. Upload or paste your study material for AI-powered summarization.
-4. Explore the AI Studio to harness multiple advanced AI models.
-5. Customize your chat tools with masks to fine-tune your study experience.
-
-## 📌 API Routes
-
-### Authentication
-- `POST /auth/signup` — User registration
-- `POST /auth/login` — User login
-- `POST /auth/logout` — User logout
-
-### Study Features
-- `POST /summarize` — Generate AI-based summaries
-- `POST /quiz` — Generate quizzes from content (coming soon)
-- `GET /progress` — Fetch user progress (coming soon)
-
-## 📦 Deployment
-
-### Frontend
-Deploy on Vercel:
-```sh
-npm run build
-vercel deploy
-```
-
-### Backend
-Deploy on Railway:
-```sh
-railway up
-```
+1. **Onboarding**: On your first visit, the app will guide you through a setup process to input your OpenRouter API key and select your default model.
+2. **Chat**: Use the main chat area to interact with models. Switch models on-the-fly via the chat controls.
+3. **Tools**: Navigate to the Tools Hub to create or use predefined prompts for specific study tasks.
+4. **Notes**: Save and organize insights from your AI interactions directly into the Notes Board.
+5. **Settings**: Customize your theme, update your API key, or manage your default model configurations in the Settings Console.
 
 ## 💡 Contributing
-We welcome contributions! Follow these steps to join the adventure:
+We welcome contributions!
 1. Fork the repository.
-2. Create a feature branch:
-    ```sh
-    git checkout -b feature-name
-    ```
-3. Commit your changes:
-    ```sh
-    git commit -m "Add new feature"
-    ```
-4. Push to your branch:
-    ```sh
-    git push origin feature-name
-    ```
+2. Create a feature branch (`git checkout -b feature/awesome-feature`).
+3. Commit your changes (`git commit -m 'Add awesome feature'`).
+4. Push to the branch (`git push origin feature/awesome-feature`).
 5. Open a Pull Request.
 
 ## 📄 License
 This project is licensed under the **MIT License**.
 
 ## 📬 Contact
-For any inquiries or ideas, feel free to reach out via harish.s@kalvium.community or open an issue in the repository.
+For inquiries or feedback, please reach out via harish.s@kalvium.community or open an issue in the repository.
 
-Happy Learning with SmartPrep! 🚀🎓
-
+Happy Learning with SmartPrep AI Studio! 🚀🎓

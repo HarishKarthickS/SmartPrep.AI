@@ -1,42 +1,65 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, MessageSquare, Trash2, ArrowDown, HelpCircle, StopCircle, RefreshCw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, MessageSquare, Trash2, ArrowDown, StopCircle, RefreshCw, Zap, BookOpen, Code, GraduationCap, ChevronDown, X, Library, FileText, Layout, Loader2, Maximize } from 'lucide-react';
 import { useChatStore } from '../../stores/chat-store';
+import { useNotesStore } from '../../stores/notes-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { useToastStore } from '../../stores/toast-store';
-import { streamChatCompletions } from '../../lib/openrouter/client';
+import { streamChatCompletions, fetchModels } from '../../lib/openrouter/client';
 import { ChatMessage } from './chat-message';
 import { ChatInput } from './chat-input';
+import { ModelSelector } from '../ui/model-selector';
 import { Button } from '../ui/button';
 import { Dialog } from '../ui/dialog';
+import { cn } from '../../lib/utils/cn';
+import { fadeUp, staggerContainer, springTransition } from '../../lib/utils/animations';
+import { searchLibraryChunks, chunkText, generateEmbedding } from '../../lib/utils/embeddings';
+import { parseFile } from '../../lib/utils/file-parser';
+import { db } from '../../lib/db/dexie';
 
 export const ChatArea: React.FC = () => {
   const {
     sessions,
     activeSessionId,
     isStreaming,
+    isTitling,
     activeController,
     addMessage,
     updateMessage,
+    updateReasoning,
     deleteMessage,
     setStreaming,
+    setIsTitling,
     setController,
     renameSession,
+    updateMetadata,
+    createSession,
+    isRightPanelOpen,
+    setIsRightPanelOpen,
+    setActiveArtifact,
+    setActiveRightTab,
+    attachContext
   } = useChatStore();
 
-  const { settings } = useSettingsStore();
+  const { addLibraryItem } = useNotesStore();
+  const { settings, updateSettings } = useSettingsStore();
   const { showToast } = useToastStore();
   
   const [inputVal, setInputVal] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showModelPicker, setShowModelPicker] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [isZenMode, setIsZenMode] = useState(false);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+
 
   const activeSession = sessions.find((s) => s.id === activeSessionId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -47,7 +70,6 @@ export const ChatArea: React.FC = () => {
     }
   }, [activeSession?.messages?.length, isStreaming]);
 
-  // Check scroll height to display "Scroll to bottom" button
   const handleScroll = () => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -60,143 +82,304 @@ export const ChatArea: React.FC = () => {
       activeController.abort();
       setController(null);
       setStreaming(false);
-      showToast('Generation Stopped', 'info', 'AI response stream canceled by user.');
+      showToast('Stopped', 'info', 'AI response stopped.');
     }
   };
 
-  const handleTriggerAIStream = async (messageList: any[]) => {
-    if (!activeSessionId) return;
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+
+    const data = e.dataTransfer.getData('application/smartprep-item');
+    if (!data) return;
+
+    try {
+      const { type, id } = JSON.parse(data);
+      let sessionId = activeSessionId;
+      if (!sessionId) {
+        sessionId = await createSession(settings.defaultModel);
+      }
+
+      await attachContext(sessionId, type, id);
+      showToast('Context Added', 'success', `Dropped ${type} attached to session.`);
+    } catch (err) {
+      console.error('Drop error:', err);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setIsDraggingOver(true);
+  };
+
+  const handleFileAttach = async (file: File) => {
+    let sessionId = activeSessionId;
+    if (!sessionId) {
+      sessionId = await createSession(settings.defaultModel);
+    }
+
+    setIsProcessingFile(true);
+    showToast('Processing', 'info', `Indexing ${file.name} for chat...`);
+
+    try {
+      const parsedContent = await parseFile(file);
+      const title = file.name.replace(/\.[^/.]+$/, "");
+      
+      const id = addLibraryItem({ 
+        title, 
+        content: parsedContent, 
+        type: 'document', 
+        tags: ['attached', file.type.split('/')[1]] 
+      });
+
+      // Chunk and embed for RAG
+      const chunks = chunkText(parsedContent);
+      const chunkPromises = chunks.map(async (chunk) => {
+        const embedding = await generateEmbedding(chunk);
+        return db.documentChunks.add({
+          libraryItemId: id,
+          content: chunk,
+          embedding
+        });
+      });
+
+      await Promise.all(chunkPromises);
+      
+      // Auto-attach to context
+      await attachContext(sessionId, 'library', id);
+      
+      showToast('Attached', 'success', `${file.name} is now in context.`);
+    } catch (error: any) {
+      console.error('Attachment error:', error);
+      showToast('Error', 'error', error.message || 'Failed to attach file.');
+    } finally {
+      setIsProcessingFile(false);
+    }
+  };
+
+  const handleTriggerAIStream = async (messageList: any[], targetSessionId?: string) => {
+    const sessionId = targetSessionId || activeSessionId;
+    if (!sessionId) return;
 
     const controller = new AbortController();
     setController(controller);
     setStreaming(true);
 
+    const latestSession = useChatStore.getState().sessions.find(s => s.id === sessionId);
+    if (!latestSession?.model) {
+      showToast('Model Required', 'error', 'Please select a model for this session.');
+      setStreaming(false);
+      setController(null);
+      return;
+    }
+
     const tempMessageId = Math.random().toString(36).substring(2, 15);
-    
-    // Add empty assistant response node to render stream
-    addMessage(activeSessionId, {
+
+    addMessage(sessionId, {
       id: tempMessageId,
       role: 'assistant',
       content: '',
       timestamp: Date.now(),
-      model: activeSession?.model || settings.defaultModel,
+      model: latestSession.model,
     });
 
+    // --- CONTEXT INJECTION & SEMANTIC SEARCH ---
+    const attachedContexts = latestSession?.attachedContexts || [];
+    let injectionPrompt = '';
+
+    if (attachedContexts.length > 0) {
+      injectionPrompt = "\n\nUSE THE FOLLOWING STUDY MATERIALS TO GROUND YOUR ANSWERS:\n";
+
+      const { notes, library } = useNotesStore.getState();
+      const userQuery = messageList.filter(m => m.role === 'user').pop()?.content || '';
+      
+      const libraryItemIds = attachedContexts
+        .filter(ctx => ctx.type === 'library')
+        .map(ctx => ctx.id);
+
+      // Perform semantic search if there are library items and a query
+      let retrievedChunks: any[] = [];
+      if (libraryItemIds.length > 0 && userQuery) {
+        try {
+          retrievedChunks = await searchLibraryChunks(userQuery, libraryItemIds, 4);
+        } catch (e) {
+          console.warn('Semantic search failed, falling back to full content:', e);
+        }
+      }
+
+      attachedContexts.forEach(ctx => {
+        if (ctx.type === 'note') {
+          const note = notes.find(n => n.id === ctx.id);
+          if (note) injectionPrompt += `\n[NOTE: ${note.title}]\n${note.content}\n`;
+        } else if (ctx.type === 'library') {
+          const item = library.find(l => l.id === ctx.id);
+          if (item) {
+            // Include relevant chunks first
+            const relevantForThisItem = retrievedChunks.filter(c => c.libraryItemId === item.id);
+            if (relevantForThisItem.length > 0) {
+              injectionPrompt += `\n[DOCUMENT: ${item.title} (Relevant Segments)]\n`;
+              relevantForThisItem.forEach(c => injectionPrompt += `${c.content}\n---\n`);
+            } else {
+              // Fallback to full content if not indexed or no query match (truncated if very long)
+              injectionPrompt += `\n[DOCUMENT: ${item.title}]\n${item.content.slice(0, 5000)}\n`;
+            }
+          }
+        }
+      });
+      injectionPrompt += "\n--- END OF STUDY MATERIALS ---\n";
+    }
+
+    const artifactInstructions = `
+When explaining complex topics, you can create interactive study tools using artifacts.
+FORMAT: Use <artifact title="Title" language="tsx">...</artifact> for interactive components (React/TSX).
+Always include 'tsx' or 'html' in the language attribute. The artifact should be a self-contained component.
+`;
+
+    const baseSystemPrompt = latestSession?.systemPrompt || 'You are SmartPrep AI, an intelligent tutor. Always be conversational, helpful and accurate. DO NOT output safety ratings, headers, or metadata.';
+    const finalSystemPrompt = baseSystemPrompt + artifactInstructions + injectionPrompt;
+
+    const finalMessages = [
+      { role: 'system', content: finalSystemPrompt },
+      ...messageList
+    ];
+    // -------------------------
+
     let currentResponse = '';
+    let currentReasoning = '';
+    let artifactExtracted = false;
 
     await streamChatCompletions({
       apiKey: settings.apiKey,
-      model: activeSession?.model || settings.defaultModel,
-      messages: messageList,
-      temperature: activeSession?.temperature,
+      model: latestSession?.model || settings.defaultModel,
+      messages: finalMessages,
+      temperature: latestSession?.temperature,
       signal: controller.signal,
-      onChunk: (chunk) => {
-        currentResponse += chunk;
-        updateMessage(activeSessionId, tempMessageId, currentResponse);
+      sessionId: sessionId, 
+      onChunk: (contentChunk, reasoningChunk) => {
+        if (reasoningChunk) {
+          currentReasoning += reasoningChunk;
+          updateReasoning(sessionId, tempMessageId, currentReasoning);
+        }
+
+        if (contentChunk) {
+          currentResponse += contentChunk;
+
+          // Robust multi-fragment safety artifact stripping
+          const sanitizedResponse = currentResponse
+            .replace(/User Safety:\s*safe\n?/gi, '')
+            .replace(/Response Safety:\s*safe\n?/gi, '');
+
+          updateMessage(sessionId, tempMessageId, sanitizedResponse);
+
+          // Real-time Artifact Extraction
+          if (currentResponse.includes('</artifact>') && !artifactExtracted) {
+            const match = currentResponse.match(/<artifact\s+title="([^"]+)"\s+language="([^"]+)">([\s\S]*?)<\/artifact>/);
+            if (match) {
+              const [, title, language, code] = match;
+              setActiveArtifact({ title, language, code: code.trim() });
+              setActiveRightTab('artifacts');
+              setIsRightPanelOpen(true);
+              artifactExtracted = true;
+              showToast('Artifact Generated', 'success', `View ${title} in the Workspace.`);
+            }
+          }
+        }
       },
       onError: (err) => {
         updateMessage(
-          activeSessionId,
+          sessionId,
           tempMessageId,
-          `⚠️ **OpenRouter API Error:**\n\n> ${err}\n\n*Please verify your API key, connection state, or balance levels under Settings.*`
+          `⚠️ **OpenRouter API Error:**\n\n> ${err}\n\n*Please verify your API key or balance levels.*`
         );
         showToast('Stream Error', 'error', err);
         setStreaming(false);
         setController(null);
       },
-      onStart: () => {
-        // Stream starting
-      }
+      onStart: () => {}
     });
 
     setStreaming(false);
     setController(null);
 
-    // Auto title generation if it's the first exchange
     if (settings.autoTitle && messageList.filter(m => m.role === 'user').length === 1 && currentResponse) {
-      generateAutoTitle(messageList[0].content);
+      generateAutoTitle(messageList[0].content, sessionId);
     }
   };
 
-  const handleSubmitPrompt = async () => {
-    if (!inputVal.trim() || !activeSessionId || !activeSession) return;
-    
+  const handleSubmitPrompt = async (overridePrompt?: string) => {
+    const text = (overridePrompt || inputVal).trim();
+    if (!text) return;
+
     if (!settings.apiKey) {
-      showToast('API Key Required', 'error', 'Please enter your OpenRouter key in Settings or Onboarding.');
+      showToast('API Key Required', 'error', 'Please enter your API key in Settings.');
       return;
     }
 
-    const promptText = inputVal.trim();
-    setInputVal('');
+    let sessionId = activeSessionId;
+    if (!sessionId) {
+      sessionId = await createSession(settings.defaultModel);
+    }
+
+    if (!overridePrompt) setInputVal('');
 
     const userMsg = {
       id: Math.random().toString(36).substring(2, 15),
       role: 'user' as const,
-      content: promptText,
+      content: text,
       timestamp: Date.now(),
     };
 
-    addMessage(activeSessionId, userMsg);
+    await addMessage(sessionId, userMsg);
 
-    // Run AI Stream
-    const currentMessages = [...activeSession.messages, userMsg];
-    await handleTriggerAIStream(currentMessages);
+    // Use latest state
+    const updatedSession = useChatStore.getState().sessions.find(s => s.id === sessionId);
+    if (updatedSession) {
+      await handleTriggerAIStream(updatedSession.messages, sessionId);
+    }
   };
 
-  // Socratic / preset prompt selectors
-  const handleSelectQuickPrompt = (prompt: string) => {
-    setInputVal(prompt);
-  };
 
   const handleRetryLast = async () => {
-    if (!activeSessionId || !activeSession || activeSession.messages.length === 0) return;
+    if (!activeSessionId) return;
+    const latestSession = useChatStore.getState().sessions.find(s => s.id === activeSessionId);
+    if (!latestSession || latestSession.messages.length === 0) return;
 
-    // Find last user message
-    const msgs = [...activeSession.messages];
+    const msgs = [...latestSession.messages];
     const assistantIndex = msgs.findLastIndex((m) => m.role === 'assistant');
     if (assistantIndex !== -1) {
       deleteMessage(activeSessionId, msgs[assistantIndex].id);
     }
-
-    const filteredMsgs = activeSession.messages.filter((m, i) => m.role === 'user' || i < assistantIndex);
+    
+    const filteredMsgs = latestSession.messages.filter((m, i) => 
+      (m.role === 'user' || i < assistantIndex) && m.id !== (assistantIndex !== -1 ? msgs[assistantIndex].id : '')
+    );
     await handleTriggerAIStream(filteredMsgs);
   };
 
   const handleEditSubmit = async (messageId: string, newContent: string) => {
-    if (!activeSessionId || !activeSession) return;
-
-    // Update message content
-    useChatStore.setState((state) => ({
-      sessions: state.sessions.map((s) => {
-        if (s.id !== activeSessionId) return s;
-        return {
-          ...s,
-          messages: s.messages.map((m) => (m.id === messageId ? { ...m, content: newContent } : m)),
-        };
-      }),
-    }));
-
-    // Find the message index
-    const index = activeSession.messages.findIndex((m) => m.id === messageId);
+    if (!activeSessionId) return;
+    const latestSession = useChatStore.getState().sessions.find(s => s.id === activeSessionId);
+    if (!latestSession) return;
+    
+    // Find the message index to slice correctly
+    const index = latestSession.messages.findIndex((m) => m.id === messageId);
     if (index === -1) return;
 
-    // Remove any assistant responses after this message
-    const sliceMsgs = activeSession.messages.slice(0, index + 1).map((m) =>
+    // Slice up to the edited message and update its content
+    const slicedMessages = latestSession.messages.slice(0, index + 1).map((m) =>
       m.id === messageId ? { ...m, content: newContent } : m
     );
 
-    // Update session content directly to trigger re-renders
+    // Single state update for the session messages
     useChatStore.setState((state) => ({
-      sessions: state.sessions.map((s) => {
-        if (s.id !== activeSessionId) return s;
-        return {
-          ...s,
-          messages: sliceMsgs,
-        };
-      }),
+      sessions: state.sessions.map((s) =>
+        s.id === activeSessionId ? { ...s, messages: slicedMessages, updatedAt: Date.now() } : s
+      ),
     }));
 
-    await handleTriggerAIStream(sliceMsgs);
+    // Re-trigger the stream from the new context
+    await handleTriggerAIStream(slicedMessages);
   };
 
   const handleClearContext = () => {
@@ -210,18 +393,48 @@ export const ChatArea: React.FC = () => {
     showToast('Context Cleared', 'info', 'Conversation history wiped.');
   };
 
-  const generateAutoTitle = async (firstPrompt: string) => {
-    if (!settings.apiKey || !activeSessionId) return;
+  const handleSelectQuickPrompt = (prompt: string) => {
+    handleSubmitPrompt(prompt);
+  };
+
+  const changeSessionModel = (modelId: string) => {
+    if (!activeSessionId) {
+       updateSettings({ defaultModel: modelId });
+       setShowModelPicker(false);
+       showToast('Global Model Set', 'success', `Next session will use ${modelId}.`);
+       return;
+    }
+    
+    // Update local session
+    useChatStore.setState((state) => ({
+      sessions: state.sessions.map((s) => 
+        s.id === activeSessionId ? { ...s, model: modelId } : s
+      ),
+    }));
+
+    // Persist as new global default
+    updateSettings({ defaultModel: modelId });
+    
+    setShowModelPicker(false);
+    showToast('Model Switched', 'success', `Session now using ${modelId}. Default brain updated.`);
+  };
+
+  const generateAutoTitle = async (firstPrompt: string, sessionId: string) => {
+    const { setIsTitling, updateMetadata, sessions } = useChatStore.getState();
+    if (!settings.apiKey) return;
+
+    const session = sessions.find(s => s.id === sessionId);
+    const titlingModel = session?.model || settings.defaultModel;
+    if (!titlingModel) return;
+
+    setIsTitling(true);
     try {
       const summaryMsg = [
-        {
-          role: 'system',
-          content: 'You are a precise tool. Generate a short 3-5 word title for a chat that starts with the prompt. Output ONLY the short title. No quotes, no explanations, no periods.',
+        { 
+          role: 'system', 
+          content: 'Output a JSON object with "title" (3-5 words) and "subtitle" (short descriptive phrase) for this chat based on the first message. FORMAT: {"title": "...", "subtitle": "..."}' 
         },
-        {
-          role: 'user',
-          content: firstPrompt,
-        },
+        { role: 'user', content: firstPrompt },
       ];
 
       const res = await fetch('/api/openrouter/chat', {
@@ -231,187 +444,320 @@ export const ChatArea: React.FC = () => {
           'Authorization': `Bearer ${settings.apiKey}`,
         },
         body: JSON.stringify({
-          model: 'google/gemini-flash-1.5',
+          model: titlingModel,
           messages: summaryMsg,
           temperature: 0.3,
           stream: false,
+          session_id: sessionId,
         }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        const generatedTitle = data.choices?.[0]?.message?.content?.trim();
-        if (generatedTitle) {
-          renameSession(activeSessionId, generatedTitle);
+        const content = data.choices?.[0]?.message?.content?.trim();
+        if (content) {
+          try {
+            // Attempt to parse JSON response
+            const metadata = JSON.parse(content.replace(/```json|```/g, ''));
+            if (metadata.title && metadata.subtitle) {
+              updateMetadata(sessionId, metadata.title, metadata.subtitle);
+            }
+          } catch {
+            // Fallback if not JSON
+            if (content.length < 100) updateMetadata(sessionId, content, 'Conversation');
+          }
         }
       }
     } catch (e) {
-      console.warn('Auto title gen failed silently:', e);
+      console.warn('Auto title gen failed:', e);
+    } finally {
+      setIsTitling(false);
     }
   };
 
-  if (!activeSession) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center select-none">
-        <MessageSquare className="h-10 w-10 text-muted-foreground/40 mb-3 animate-pulse-slow" />
-        <h3 className="text-base font-semibold text-foreground">Welcome to SmartPrep Studio</h3>
-        <p className="text-xs text-muted-foreground max-w-sm mt-1">
-          Select an existing conversation from the sidebar or click "+ New Chat" to begin.
-        </p>
-      </div>
-    );
-  }
-
-  const isEmpty = activeSession.messages.length === 0;
+  const isEmpty = !activeSession || activeSession.messages.length === 0;
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background relative overflow-hidden select-text">
+    <div 
+      className={cn(
+        "flex-1 flex flex-col h-full bg-transparent relative overflow-hidden transition-all duration-300",
+        isDraggingOver && "ring-2 ring-inset ring-primary/40 bg-primary/5"
+      )}
+      onDragOver={handleDragOver}
+      onDragLeave={() => setIsDraggingOver(false)}
+      onDrop={handleDrop}
+    >
       
-      {/* Top Header Bar */}
-      <div className="h-14 border-b border-border px-6 flex items-center justify-between flex-shrink-0 bg-card select-none">
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-foreground truncate max-w-[300px]">
-            {activeSession.title}
-          </h2>
-          <p className="text-[10px] text-muted-foreground truncate max-w-[300px] mt-0.5">
-            Running model: <span className="font-mono text-primary/80 font-bold">{activeSession.model}</span>
-          </p>
+      {/* Immersive Academic Header */}
+      <div className={cn(
+        "h-16 px-6 flex items-center justify-between flex-shrink-0 z-10 transition-all duration-300",
+        !isZenMode ? "bg-background/80 backdrop-blur-md border-b border-border/40" : "bg-transparent"
+      )}>
+        <div className="min-w-0 flex items-center space-x-4">
+          <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-primary flex-shrink-0">
+            <GraduationCap className="h-5 w-5" />
+          </div>
+          <div className="flex flex-col justify-center min-w-0">
+            <div className="flex items-center space-x-2">
+              <h2 className="text-[13px] font-bold text-foreground truncate max-w-[200px] leading-tight">
+                {activeSession?.title || 'SmartPrep Workspace'}
+              </h2>
+              {isTitling && (
+                <Loader2 className="h-3 w-3 animate-spin text-primary/60" />
+              )}
+            </div>
+            
+            <div className="flex items-center space-x-2 mt-1">
+              <button 
+                onClick={() => setShowModelPicker(true)}
+                className="flex items-center space-x-1.5 group outline-none"
+              >
+                <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest group-hover:text-primary transition-colors leading-none">
+                  {activeSession?.model || settings.defaultModel}
+                </span>
+                <ChevronDown className="h-2.5 w-2.5 text-muted-foreground/30 group-hover:text-primary transition-colors" />
+              </button>
+
+              {activeSession && activeSession.attachedContexts && activeSession.attachedContexts.length > 0 && (
+                <>
+                  <span className="text-muted-foreground/20 text-[10px]">•</span>
+                  <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar max-w-[300px]">
+                    {activeSession.attachedContexts.map((ctx) => {
+                      const { notes, library } = useNotesStore.getState();
+                      const item = ctx.type === 'note' ? notes.find(n => n.id === ctx.id) : library.find(l => l.id === ctx.id);
+                      if (!item) return null;
+                      return (
+                        <div 
+                          key={`${ctx.type}-${ctx.id}`}
+                          className="flex items-center space-x-1.5 px-2 py-1 rounded-md bg-secondary border border-border/50 text-[9px] font-bold text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
+                        >
+                          {ctx.type === 'note' ? <FileText className="h-2.5 w-2.5" /> : <Library className="h-2.5 w-2.5" />}
+                          <span className="max-w-[60px] truncate leading-none">{item.title}</span>
+                          <button 
+                            onClick={() => useChatStore.getState().detachContext(activeSession.id, ctx.type, ctx.id)}
+                            className="hover:text-destructive transition-colors ml-0.5"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
-        {!isEmpty && (
+        <div className="flex items-center space-x-1.5">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowClearConfirm(true)}
-            className="text-muted-foreground hover:text-destructive h-8.5"
+            onClick={() => setIsZenMode?.(!isZenMode)}
+            className={cn(
+              "rounded-xl transition-all h-9 px-3 flex items-center space-x-2 border border-transparent",
+              isZenMode ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"
+            )}
+            title={isZenMode ? "Exit Zen Mode" : "Enter Zen Mode"}
           >
-            <Trash2 className="h-4 w-4 mr-2" />
-            <span>Clear Context</span>
+            {isZenMode ? <Layout className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
           </Button>
-        )}
-      </div>
 
-      {/* Stream messages container */}
-      <div
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-6 py-6 space-y-6"
-      >
-        {isEmpty ? (
-          /* Empty state prompt helpers */
-          <div className="max-w-2xl mx-auto flex flex-col space-y-8 py-10 animate-in fade-in slide-in-from-bottom-4 duration-350 select-none">
-            <div className="flex flex-col space-y-2 text-center">
-              <div className="mx-auto bg-primary/10 p-3 rounded-md text-primary w-fit border border-primary/20">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <h3 className="text-base font-semibold text-foreground">
-                How can I help you learn today?
-              </h3>
-              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                Ask simple or deep conceptual questions, paste homework problems, or test your comprehension.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-4">
-              <button
-                onClick={() => handleSelectQuickPrompt('Explain quantum physics like I am five years old, focusing on qubits.')}
-                className="p-4 bg-card border border-border rounded-lg text-left hover:border-primary/40 hover:bg-primary/5 transition-all text-xs cursor-pointer"
+          {!isZenMode && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsRightPanelOpen?.(!isRightPanelOpen)}
+                className={cn(
+                  "rounded-xl transition-all h-9 px-3 flex items-center space-x-2 border border-transparent",
+                  isRightPanelOpen ? "bg-secondary text-primary border-primary/10 shadow-sm" : "text-muted-foreground hover:bg-secondary"
+                )}
               >
-                <p className="font-semibold text-foreground">Explain simply</p>
-                <p className="text-muted-foreground mt-1 leading-normal">
-                  "Explain quantum physics like I am five years old..."
-                </p>
-              </button>
+                <BookOpen className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Workspace</span>
+              </Button>
 
-              <button
-                onClick={() => handleSelectQuickPrompt('Act as a Socratic tutor. Guide me through solving the equation f(x) = 2x^2 - 4x + 6 step-by-step.')}
-                className="p-4 bg-card border border-border rounded-lg text-left hover:border-primary/40 hover:bg-primary/5 transition-all text-xs cursor-pointer"
-              >
-                <p className="font-semibold text-foreground">Socratic Math Tutor</p>
-                <p className="text-muted-foreground mt-1 leading-normal">
-                  "Guide me through solving the quadratic equation..."
-                </p>
-              </button>
-
-              <button
-                onClick={() => handleSelectQuickPrompt('Compare and contrast the mechanical causes of World War 1 vs World War 2 in bullet points.')}
-                className="p-4 bg-card border border-border rounded-lg text-left hover:border-primary/40 hover:bg-primary/5 transition-all text-xs cursor-pointer"
-              >
-                <p className="font-semibold text-foreground">History Outline</p>
-                <p className="text-muted-foreground mt-1 leading-normal">
-                  "Compare causes of World War 1 vs World War 2..."
-                </p>
-              </button>
-
-              <button
-                onClick={() => handleSelectQuickPrompt('Debug this React hydration error. Why does my text mismatch on server vs client?')}
-                className="p-4 bg-card border border-border rounded-lg text-left hover:border-primary/40 hover:bg-primary/5 transition-all text-xs cursor-pointer"
-              >
-                <p className="font-semibold text-foreground">React/Code Helper</p>
-                <p className="text-muted-foreground mt-1 leading-normal">
-                  "Debug this React hydration mismatch error..."
-                </p>
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="max-w-3xl mx-auto space-y-6">
-            {activeSession.messages.map((m) => (
-              <ChatMessage
-                key={m.id}
-                message={m}
-                onRetry={m.role === 'assistant' && activeSession.messages[activeSession.messages.length - 1].id === m.id ? handleRetryLast : undefined}
-                onEditSubmit={m.role === 'user' ? (newText) => handleEditSubmit(m.id, newText) : undefined}
-              />
-            ))}
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Floating Scroll-to-bottom helper */}
-      {showScrollBtn && (
-        <button
-          onClick={scrollToBottom}
-          className="absolute right-8 bottom-32 bg-card border border-border text-foreground hover:bg-muted p-2 rounded-full shadow-lg transition-all z-20 cursor-pointer flex items-center justify-center"
-        >
-          <ArrowDown className="h-4 w-4" />
-        </button>
-      )}
-
-      {/* Bottom Input Area */}
-      <div className="p-4 border-t border-border flex-shrink-0 bg-card">
-        <div className="max-w-3xl mx-auto">
-          <ChatInput
-            value={inputVal}
-            onChange={setInputVal}
-            onSubmit={handleSubmitPrompt}
-            isStreaming={isStreaming}
-            onAbort={isStreaming ? handleAbort : undefined}
-          />
+              {!isEmpty && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowClearConfirm(true)}
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/5 rounded-xl transition-all h-9 w-9 p-0 flex items-center justify-center"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </>
+          )}
         </div>
       </div>
 
-      {/* Clear Confirmation Modal */}
+      {/* Messages Canvas */}
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className={cn(
+          "flex-1 overflow-y-auto space-y-8 custom-scrollbar scroll-smooth transition-all duration-500",
+          !isZenMode ? "px-6 py-8" : "px-[15%] py-12"
+        )}
+      >
+        <AnimatePresence mode="popLayout">
+          {isEmpty ? (
+            <motion.div 
+              key="empty-state"
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+              className="max-w-2xl mx-auto flex flex-col space-y-10 py-12"
+            >
+              <motion.div variants={fadeUp} className="flex flex-col items-center text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center text-primary shadow-sm mb-2">
+                  <Sparkles className="h-7 w-7" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground tracking-tight">
+                  Ready to master something new?
+                </h3>
+                <p className="text-[13px] text-muted-foreground/60 max-w-sm font-medium leading-relaxed">
+                  SmartPrep is your adaptive tutor. Choose a path or ask a question to begin.
+                </p>
+              </motion.div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { title: "Explain Simply", icon: <Zap className="h-4 w-4"/>, text: "Explain quantum physics like I am five years old.", label: "CONCEPT" },
+                  { title: "Socratic Tutor", icon: <BookOpen className="h-4 w-4"/>, text: "Guide me through solving a quadratic equation step-by-step.", label: "MATH" },
+                  { title: "Code Helper", icon: <Code className="h-4 w-4"/>, text: "How do I implement a custom hook in React for data fetching?", label: "DEV" },
+                  { title: "Summarize", icon: <GraduationCap className="h-4 w-4"/>, text: "Contrast the industrial revolution causes in UK vs USA.", label: "HISTORY" }
+                ].map((item, i) => (
+                  <motion.button
+                    key={i}
+                    variants={fadeUp}
+                    onClick={() => handleSelectQuickPrompt(item.text)}
+                    className="group bg-card border border-border/50 hover:border-primary/30 p-5 text-left transition-all duration-300 rounded-[20px] relative overflow-hidden shadow-sm"
+                  >
+                    <div className="flex items-center space-x-2.5 mb-2">
+                      <div className="text-primary/60">{item.icon}</div>
+                      <span className="text-[9px] font-black text-primary/40 uppercase tracking-[0.2em]">{item.label}</span>
+                    </div>
+                    <p className="font-bold text-[13px] text-foreground mb-1">{item.title}</p>
+                    <p className="text-[11px] text-muted-foreground/60 leading-relaxed line-clamp-2 font-medium">{item.text}</p>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          ) : (
+            <div className={cn("mx-auto space-y-8 pb-20", !isZenMode ? "max-w-2xl" : "max-w-3xl")}>
+              {activeSession && activeSession.messages.map((m) => (
+                <ChatMessage
+                  key={m.id}
+                  message={m}
+                  onRetry={m.role === 'assistant' && activeSession.messages[activeSession.messages.length - 1].id === m.id ? handleRetryLast : undefined}
+                  onEditSubmit={m.role === 'user' ? (newText) => handleEditSubmit(m.id, newText) : undefined}
+                />
+              ))}
+            </div>
+          )}
+        </AnimatePresence>
+        <div ref={messagesEndRef} className="h-10" />
+      </div>
+
+      {/* Floating Scroll Button */}
+      <AnimatePresence>
+        {showScrollBtn && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={scrollToBottom}
+            className="absolute right-8 bottom-32 w-10 h-10 bg-card border border-border shadow-lg rounded-full flex items-center justify-center z-20 hover:scale-105 transition-transform"
+          >
+            <ArrowDown className="h-4 w-4 text-primary" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Academic Input Area */}
+      <div className={cn(
+        "pb-8 pt-2 flex-shrink-0 z-10 transition-all duration-500",
+        !isZenMode ? "px-6" : "px-[15%]"
+      )}>
+        <div className={cn("mx-auto", !isZenMode ? "max-w-2xl" : "max-w-3xl")}>
+          <ChatInput
+            value={inputVal}
+            onChange={setInputVal}
+            onSubmit={() => handleSubmitPrompt()}
+            isStreaming={isStreaming}
+            onAbort={isStreaming ? handleAbort : undefined}
+            onFileAttach={handleFileAttach}
+            isProcessingFile={isProcessingFile}
+          />
+          <div className="mt-3 flex justify-center">
+            <p className="text-[9px] text-muted-foreground/40 font-bold uppercase tracking-[0.2em]">
+              SmartPrep AI can make mistakes. Verify critical information.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Wipe Confirmation */}
       <Dialog
         isOpen={showClearConfirm}
         onClose={() => setShowClearConfirm(false)}
-        title="Clear Conversation Context"
+        title="Clear Conversation"
         footer={
           <div className="flex space-x-2">
-            <Button variant="ghost" onClick={() => setShowClearConfirm(false)}>
+            <Button variant="ghost" onClick={() => setShowClearConfirm(false)} className="rounded-xl font-bold uppercase tracking-wider text-[10px]">
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleClearContext}>
-              Wipe Context
+            <Button variant="destructive" onClick={handleClearContext} className="rounded-xl font-bold uppercase tracking-wider text-[10px]">
+              Clear All
             </Button>
           </div>
         }
       >
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Are you sure you want to clear all messages in this chat session? This action is permanent and cannot be undone.
+        <p className="text-[13px] text-muted-foreground leading-relaxed font-medium">
+          This will permanently delete all messages in this session.
         </p>
       </Dialog>
+
+      {/* Model Picker Overlay */}
+      <AnimatePresence>
+        {showModelPicker && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-background/60 backdrop-blur-sm" 
+              onClick={() => setShowModelPicker(false)} 
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-lg bg-card border border-border rounded-[32px] shadow-2xl z-10 flex flex-col overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-border/50">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-primary">
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                  <h3 className="text-base font-bold text-foreground tracking-tight">Intelligence</h3>
+                </div>
+                <button onClick={() => setShowModelPicker(false)} className="w-8 h-8 flex items-center justify-center hover:bg-secondary rounded-full text-muted-foreground transition-all">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="p-6">
+                <ModelSelector 
+                  selectedModelId={activeSession?.model || settings.defaultModel} 
+                  onSelect={changeSessionModel} 
+                  apiKey={settings.apiKey}
+                  maxHeight="400px"
+                />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

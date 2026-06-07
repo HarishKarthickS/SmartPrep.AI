@@ -16,7 +16,10 @@ export async function GET(req: NextRequest) {
       headers['Authorization'] = `Bearer ${apiKey}`;
     }
 
-    const openRouterResponse = await fetch('https://openrouter.ai/api/v1/models', {
+    // Use /models/user if authenticated to get personalized results (provider filters, etc.)
+    const endpoint = apiKey ? 'https://openrouter.ai/api/v1/models/user' : 'https://openrouter.ai/api/v1/models';
+
+    const openRouterResponse = await fetch(endpoint, {
       method: 'GET',
       headers,
       next: { revalidate: 3600 }, // cache results for an hour in Next.js

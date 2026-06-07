@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageSquare,
   Wrench,
@@ -13,17 +14,17 @@ import {
   ChevronRight,
   Pin,
   Trash2,
-  BookOpen,
-  Sparkles
+  GraduationCap,
 } from 'lucide-react';
 import { useChatStore } from '../../stores/chat-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { Button } from '../ui/button';
 import { cn } from '../../lib/utils/cn';
+import { sidebarVariants, fadeUp, staggerContainer, springTransition } from '../../lib/utils/animations';
 
 interface SidebarProps {
-  activeTab: 'chat' | 'tools' | 'notes' | 'library' | 'settings';
-  setActiveTab: (tab: 'chat' | 'tools' | 'notes' | 'library' | 'settings') => void;
+  activeTab: 'chat' | 'notes' | 'settings';
+  setActiveTab: (tab: 'chat' | 'notes' | 'settings') => void;
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
 }
@@ -37,13 +38,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const {
     sessions,
     activeSessionId,
-    createSession,
     deleteSession,
     selectSession,
     togglePinSession,
     searchQuery,
-    setSearchQuery
+    setSearchQuery,
+    isRightPanelOpen,
+    setIsRightPanelOpen,
+    activeRightTab,
+    setActiveRightTab
   } = useChatStore();
+
 
   const { settings } = useSettingsStore();
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
@@ -51,13 +56,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const { renameSession } = useChatStore();
 
-  const handleCreateChat = () => {
-    const id = createSession(settings.defaultModel);
+  const handleOpenWorkspace = (tab: 'artifacts' | 'library' | 'notes') => {
+    setActiveRightTab(tab);
+    setIsRightPanelOpen(true);
     setActiveTab('chat');
-    selectSession(id);
   };
 
-  // Group sessions by date
+  const handleCreateChat = () => {
+    selectSession(null);
+    setActiveTab('chat');
+  };
+
   const filteredSessions = sessions.filter((s) => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
@@ -79,7 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const startOfThisWeek = startOfToday - 7 * 24 * 60 * 60 * 1000;
 
     filteredSessions.forEach((s) => {
-      if (s.isPinned) return; // Handle pinned separately at the top
+      if (s.isPinned) return;
       if (s.updatedAt >= startOfToday) {
         today.push(s);
       } else if (s.updatedAt >= startOfYesterday) {
@@ -103,33 +112,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setEditTitle(currentTitle);
   };
 
-  const saveRename = (id: string) => {
+  const saveRename = async (id: string) => {
     if (editTitle.trim()) {
-      renameSession(id, editTitle.trim());
+      await renameSession(id, editTitle.trim());
     }
     setEditingSessionId(null);
   };
+
 
   const renderSessionItem = (s: typeof sessions[0]) => {
     const isActive = activeSessionId === s.id && activeTab === 'chat';
     const isEditing = editingSessionId === s.id;
 
     return (
-      <div
+      <motion.div
+        layout
+        variants={fadeUp}
         key={s.id}
         onClick={() => {
           selectSession(s.id);
           setActiveTab('chat');
         }}
         className={cn(
-          'group relative flex flex-col p-3 rounded-lg cursor-pointer transition-all border border-border bg-card mb-2 hover:bg-muted/30 select-none shadow-sm',
+          'group relative flex flex-col p-3 rounded-xl cursor-pointer transition-all border select-none mb-2',
           isActive
-            ? 'border-primary ring-1 ring-primary/50 font-medium'
-            : 'border-border text-muted-foreground hover:text-foreground'
+            ? 'bg-card border-border/60 shadow-sm'
+            : 'border-transparent text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
         )}
       >
-        <div className="flex items-center space-x-2 min-w-0">
-          <MessageSquare className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-primary" : "text-muted-foreground/60")} />
+        <div className="flex items-center space-x-2.5 min-w-0">
+          <MessageSquare className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-primary" : "text-muted-foreground/40")} />
           
           {isEditing ? (
             <input
@@ -143,11 +155,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }}
               onClick={(e) => e.stopPropagation()}
               autoFocus
-              className="flex-1 bg-background border border-primary px-1.5 py-0.5 rounded outline-none text-xs text-foreground font-semibold"
+              className="flex-1 bg-background border border-primary/30 px-2 py-0.5 rounded-lg outline-none text-xs text-foreground font-semibold"
             />
           ) : (
             <span
-              className="flex-1 truncate text-xs font-bold text-foreground pr-8 leading-tight"
+              className="flex-1 truncate text-xs font-semibold text-foreground pr-8 leading-tight"
               onDoubleClick={(e) => startEditing(s.id, s.title, e)}
             >
               {s.title}
@@ -155,294 +167,244 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        {/* Info row showing message counts and edit dates exactly like old */}
-        <div className="flex items-center justify-between text-[9px] text-muted-foreground/80 mt-2 font-semibold select-none">
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground/40 mt-2 font-medium">
           <span>{s.messages.length} messages</span>
           <span>
-            {new Date(s.updatedAt).toLocaleDateString([], {
-              month: 'short',
-              day: 'numeric',
-            })}
+            {new Date(s.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
           </span>
         </div>
 
         {!isEditing && (
-          <div className="absolute right-2.5 top-2.5 opacity-0 group-hover:opacity-100 flex items-center space-x-1 transition-opacity">
+          <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 flex items-center space-x-1 transition-opacity duration-200">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                togglePinSession(s.id);
-              }}
-              className="p-1 hover:bg-muted text-muted-foreground hover:text-foreground rounded cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); togglePinSession(s.id); }}
+              className="p-1.5 hover:bg-secondary text-muted-foreground hover:text-primary rounded-lg transition-colors"
             >
               <Pin className={cn("h-3 w-3", s.isPinned && "fill-primary text-primary")} />
             </button>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                deleteSession(s.id);
-              }}
-              className="p-1 hover:bg-muted text-muted-foreground hover:text-destructive rounded cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); deleteSession(s.id); }}
+              className="p-1.5 hover:bg-destructive/5 text-muted-foreground hover:text-destructive rounded-lg transition-colors"
             >
               <Trash2 className="h-3 w-3" />
             </button>
           </div>
         )}
-      </div>
+      </motion.div>
     );
   };
 
   return (
-    <div
-      className={cn(
-        'h-full flex flex-col bg-secondary border-r border-border transition-all duration-300 relative select-none',
-        isCollapsed ? 'w-[64px]' : 'w-[280px]'
-      )}
+    <motion.aside
+      initial={false}
+      animate={isCollapsed ? "collapsed" : "expanded"}
+      variants={sidebarVariants}
+      className="h-[calc(100vh-32px)] m-4 rounded-[28px] bg-background border border-border/40 flex flex-col relative select-none overflow-hidden z-20 shadow-sm"
     >
-      {/* Top Header */}
-      <div className={cn("p-5 flex flex-col space-y-4 border-b border-border select-none", isCollapsed && "items-center justify-center p-4")}>
+      {/* Header section */}
+      <div className={cn("p-5 flex flex-col space-y-4", isCollapsed && "items-center p-4")}>
         <div className="flex items-center justify-between w-full">
-          {!isCollapsed ? (
-            <div className="flex items-center space-x-3.5">
-              <img
-                src="https://cdn.builder.io/api/v1/image/assets/TEMP/7a61c456db2d140b6cd59cf12f5fcf71accbfcbbe0a54f71e7d93005240461e2?placeholderIfAbsent=true&apiKey=067c5bb5a47e48ceb34000b3d7a35b79"
-                alt="SmartPrep Logo"
-                className="w-8 h-8 rounded-full animate-[spin_8s_linear_infinite]"
-              />
-              <div className="flex flex-col">
-                <span className="font-bold text-base tracking-tight text-foreground leading-tight">
-                  SmartPrep
-                </span>
-                <span className="text-[10px] text-muted-foreground mt-0.5">
-                  Build your own AI Companion.
-                </span>
-              </div>
-            </div>
-          ) : (
-            <img
-              src="https://cdn.builder.io/api/v1/image/assets/TEMP/7a61c456db2d140b6cd59cf12f5fcf71accbfcbbe0a54f71e7d93005240461e2?placeholderIfAbsent=true&apiKey=067c5bb5a47e48ceb34000b3d7a35b79"
-              alt="SmartPrep Logo"
-              className="w-8 h-8 rounded-full animate-[spin_8s_linear_infinite] mt-1"
-            />
-          )}
+          <AnimatePresence mode="wait">
+            {!isCollapsed ? (
+              <motion.div 
+                key="expanded-header"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="flex items-center space-x-3"
+              >
+                <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0">
+                  <GraduationCap className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex flex-col justify-center min-w-0">
+                  <span className="font-bold text-[13px] tracking-tight text-foreground leading-none">SmartPrep</span>
+                  <span className="text-[9px] text-muted-foreground/50 font-bold mt-1 uppercase tracking-wider leading-none">AI Workspace</span>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="collapsed-header"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center"
+              >
+                <GraduationCap className="h-5 w-5 text-primary" />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {!isCollapsed && (
             <button
               onClick={() => setIsCollapsed(true)}
-              className="h-6 w-6 hover:bg-muted text-muted-foreground hover:text-foreground rounded flex items-center justify-center cursor-pointer transition-colors"
+              className="w-8 h-8 flex items-center justify-center hover:bg-secondary text-muted-foreground hover:text-foreground rounded-lg transition-colors"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
           )}
         </div>
 
-        {/* Collapsible/Expandable Trigger when collapsed */}
         {isCollapsed && (
           <button
             onClick={() => setIsCollapsed(false)}
-            className="h-8 w-8 bg-card border border-border rounded-md flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shadow-sm mt-2"
+            className="w-9 h-9 bg-secondary rounded-xl flex items-center justify-center hover:bg-muted text-muted-foreground transition-all mt-2"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
         )}
-
-        {/* Quick action bar buttons below header exactly like old */}
-        {!isCollapsed && (
-          <div className="flex space-x-2 pt-1 select-none">
-            <button
-              onClick={() => setActiveTab('tools')}
-              className={cn(
-                "flex-1 py-1.5 px-2 bg-card hover:bg-muted border border-border text-foreground hover:text-primary rounded text-[10px] font-semibold transition-all shadow-sm cursor-pointer flex items-center justify-center space-x-1.5",
-                activeTab === 'tools' && "border-primary/50 text-primary bg-primary/5"
-              )}
-            >
-              <Wrench className="h-3 w-3" />
-              <span>Masks</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('library')}
-              className={cn(
-                "flex-1 py-1.5 px-2 bg-card hover:bg-muted border border-border text-foreground hover:text-primary rounded text-[10px] font-semibold transition-all shadow-sm cursor-pointer flex items-center justify-center space-x-1.5",
-                activeTab === 'library' && "border-primary/50 text-primary bg-primary/5"
-              )}
-            >
-              <Library className="h-3 w-3" />
-              <span>Discovery</span>
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Search (Hide when collapsed) */}
       {!isCollapsed && (
-        <div className="px-5 py-3 relative flex items-center">
-          <Search className="absolute left-8 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+        <div className="px-5 py-2 relative flex items-center group">
+          <Search className="absolute left-9 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/30 group-focus-within:text-primary transition-colors" />
           <input
             type="text"
-            placeholder="Search chats..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-8.5 bg-card border border-border rounded-md pl-9 pr-3 text-xs outline-none focus:border-primary placeholder:text-muted-foreground transition-all"
+            className="w-full h-9 bg-secondary/50 border border-border/40 rounded-xl pl-10 pr-4 text-[11px] font-medium outline-none focus:ring-1 focus:ring-primary/20 focus:bg-secondary placeholder:text-muted-foreground/30 transition-all"
           />
         </div>
       )}
 
-      {/* Conversation List / Groups */}
-      <div className="flex-1 overflow-y-auto px-4 py-2 select-none">
+      <div className="flex-1 overflow-y-auto px-4 py-2 custom-scrollbar">
         {isCollapsed ? (
-          <div className="flex flex-col items-center space-y-3.5 pt-4">
+          <div className="flex flex-col items-center space-y-4 pt-4">
             <button
-              onClick={() => {
-                setActiveTab('chat');
-                setIsCollapsed(false);
-              }}
+              onClick={() => { setActiveTab('chat'); setIsCollapsed(false); }}
               className={cn(
-                "h-9 w-9 bg-card border border-border rounded-md flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shadow-sm",
-                activeTab === 'chat' && "border-primary text-primary"
+                "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
+                activeTab === 'chat' && !isRightPanelOpen ? "bg-secondary text-primary" : "text-muted-foreground hover:text-foreground"
               )}
+              title="Chat"
             >
-              <MessageSquare className="h-4.5 w-4.5" />
+              <MessageSquare className="h-5 w-5" />
             </button>
 
             <button
-              onClick={() => {
-                setActiveTab('tools');
-                setIsCollapsed(false);
-              }}
+              onClick={() => handleOpenWorkspace('library')}
               className={cn(
-                "h-9 w-9 bg-card border border-border rounded-md flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shadow-sm",
-                activeTab === 'tools' && "border-primary text-primary"
+                "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
+                isRightPanelOpen && activeRightTab === 'library' ? "bg-secondary text-primary" : "text-muted-foreground hover:text-foreground"
               )}
+              title="Resources"
             >
-              <Wrench className="h-4.5 w-4.5" />
+              <Library className="h-5 w-5" />
             </button>
 
             <button
-              onClick={() => {
-                setActiveTab('library');
-                setIsCollapsed(false);
-              }}
+              onClick={() => handleOpenWorkspace('notes')}
               className={cn(
-                "h-9 w-9 bg-card border border-border rounded-md flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shadow-sm",
-                activeTab === 'library' && "border-primary text-primary"
+                "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
+                isRightPanelOpen && activeRightTab === 'notes' ? "bg-secondary text-primary" : "text-muted-foreground hover:text-foreground"
               )}
+              title="Study Notes"
             >
-              <Library className="h-4.5 w-4.5" />
+              <FileText className="h-5 w-5" />
             </button>
+
           </div>
         ) : (
-          <>
-            {/* Pinned Chats */}
+          <motion.div variants={staggerContainer} initial="initial" animate="animate">
             {pinnedSessions.length > 0 && (
-              <div className="mb-4">
-                <span className="px-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center mb-1.5">
-                  <Pin className="h-2.5 w-2.5 mr-1 text-primary fill-primary" />
+              <div className="mb-6">
+                <span className="px-2 text-[9px] font-black text-muted-foreground/20 uppercase tracking-[0.2em] flex items-center mb-3">
                   Pinned
                 </span>
                 {pinnedSessions.map(renderSessionItem)}
               </div>
             )}
 
-            {/* Today */}
             {today.length > 0 && (
-              <div className="mb-4 animate-in fade-in duration-200">
-                <span className="px-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                  Today
-                </span>
+              <div className="mb-6">
+                <span className="px-2 text-[9px] font-black text-muted-foreground/20 uppercase tracking-[0.2em] block mb-3">Today</span>
                 {today.map(renderSessionItem)}
               </div>
             )}
 
-            {/* Yesterday */}
             {yesterday.length > 0 && (
-              <div className="mb-4">
-                <span className="px-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                  Yesterday
-                </span>
+              <div className="mb-6">
+                <span className="px-2 text-[9px] font-black text-muted-foreground/20 uppercase tracking-[0.2em] block mb-3">Yesterday</span>
                 {yesterday.map(renderSessionItem)}
               </div>
             )}
 
-            {/* This Week */}
             {thisWeek.length > 0 && (
-              <div className="mb-4">
-                <span className="px-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                  Last 7 Days
-                </span>
+              <div className="mb-6">
+                <span className="px-2 text-[9px] font-black text-muted-foreground/20 uppercase tracking-[0.2em] block mb-3">Last 7 Days</span>
                 {thisWeek.map(renderSessionItem)}
               </div>
             )}
 
-            {/* Older */}
             {older.length > 0 && (
-              <div className="mb-4">
-                <span className="px-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                  Older
-                </span>
+              <div className="mb-6">
+                <span className="px-2 text-[9px] font-black text-muted-foreground/20 uppercase tracking-[0.2em] block mb-3">Older</span>
                 {older.map(renderSessionItem)}
               </div>
             )}
-
-            {/* Empty list state */}
-            {filteredSessions.length === 0 && (
-              <div className="text-center py-10 text-[11px] text-muted-foreground">
-                No chats found
-              </div>
-            )}
-          </>
+          </motion.div>
         )}
       </div>
 
-      {/* Footer Navigation bar styled EXACTLY like old sidebar-tail */}
-      <div className="mt-auto border-t border-border p-4 bg-muted/10 flex items-center justify-between flex-shrink-0 select-none">
-        
-        {/* Left Primary actions: Settings & Saved Notes */}
-        <div className="flex items-center space-x-2">
+      <div className="mt-auto border-t border-border/40 p-4 flex items-center justify-between flex-shrink-0 bg-background/50">
+        <div className="flex items-center space-x-1">
           <button
             onClick={() => setActiveTab('settings')}
             className={cn(
-              "p-2 bg-card hover:bg-muted border border-border text-muted-foreground hover:text-foreground rounded-lg shadow-sm cursor-pointer transition-all",
-              activeTab === 'settings' && "border-primary text-primary bg-primary/5"
+              "w-9 h-9 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground transition-all",
+              activeTab === 'settings' && "bg-secondary text-primary"
             )}
-            title="Settings Console"
+            title="Settings"
           >
-            <Settings className="h-4 w-4" />
+            <Settings className="h-4.5 w-4.5" />
+          </button>
+          
+          <button
+            onClick={() => handleOpenWorkspace('library')}
+            className={cn(
+              "w-9 h-9 flex items-center justify-center rounded-xl transition-all",
+              isRightPanelOpen && activeRightTab === 'library' ? "bg-secondary text-primary" : "text-muted-foreground hover:text-foreground"
+            )}
+            title="Resources"
+          >
+            <Library className="h-4.5 w-4.5" />
           </button>
 
           <button
-            onClick={() => setActiveTab('notes')}
+            onClick={() => handleOpenWorkspace('notes')}
             className={cn(
-              "p-2 bg-card hover:bg-muted border border-border text-muted-foreground hover:text-foreground rounded-lg shadow-sm cursor-pointer transition-all",
-              activeTab === 'notes' && "border-primary text-primary bg-primary/5"
+              "w-9 h-9 flex items-center justify-center rounded-xl transition-all",
+              isRightPanelOpen && activeRightTab === 'notes' ? "bg-secondary text-primary" : "text-muted-foreground hover:text-foreground"
             )}
-            title="Saved Study Notes"
+            title="Study Notes"
           >
-            <FileText className="h-4 w-4" />
+            <FileText className="h-4.5 w-4.5" />
           </button>
+
         </div>
 
-        {/* Right Secondary action: Add/New Chat button */}
         {!isCollapsed ? (
           <Button
-            variant="outline"
+            variant="primary"
             onClick={handleCreateChat}
-            className="text-xs font-semibold px-3 h-9 flex items-center space-x-1.5 bg-card hover:bg-muted transition-all select-none border border-border"
+            className="text-[10px] font-black uppercase tracking-widest px-4 h-9 rounded-xl shadow-none"
           >
-            <Plus className="h-3.5 w-3.5" />
-            <span>New Chat</span>
+            <Plus className="h-3.5 w-3.5 mr-2" />
+            New Chat
           </Button>
         ) : (
           <Button
-            variant="outline"
+            variant="primary"
             size="icon"
             onClick={handleCreateChat}
-            className="h-8 w-8 rounded-md bg-card border border-border"
+            className="h-9 w-9 rounded-xl shadow-none"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4" />
           </Button>
         )}
       </div>
-    </div>
+    </motion.aside>
   );
 };
+
 export default Sidebar;

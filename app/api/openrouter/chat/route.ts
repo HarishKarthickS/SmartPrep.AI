@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { messages, model, temperature, stream = true } = body;
+    const { messages, model, temperature, stream = true, session_id, user } = body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -33,10 +33,12 @@ export async function POST(req: NextRequest) {
         'X-Title': 'SmartPrep AI Studio',
       },
       body: JSON.stringify({
-        model: model || 'google/gemini-flash-1.5',
+        model,
         messages,
         temperature: temperature ?? 0.7,
         stream,
+        session_id,
+        user,
       }),
     });
 

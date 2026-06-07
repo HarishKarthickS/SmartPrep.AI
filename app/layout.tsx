@@ -2,9 +2,10 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: "SmartPrep AI Studio",
-  description: "A premium, intelligent client-side AI learning and productivity workspace.",
+  title: "SmartPrep Studio — Professional AI Workspace",
+  description: "A high-performance, local-first AI workspace for intelligent learning and productivity. Powered by Claude-inspired aesthetics and T3-speed.",
 };
+
 
 export const viewport: Viewport = {
   width: "device-width",

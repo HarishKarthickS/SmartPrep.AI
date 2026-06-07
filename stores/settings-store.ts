@@ -13,9 +13,9 @@ interface SettingsState {
 
 const DEFAULT_SETTINGS: UserSettings = {
   apiKey: '',
-  defaultModel: 'google/gemini-flash-1.5',
+  defaultModel: '', 
   customModels: [],
-  theme: 'dark', // default to dark for elegant studio design
+  theme: 'dark', 
   fontSize: 'base',
   autoTitle: true,
   temperature: 0.7,

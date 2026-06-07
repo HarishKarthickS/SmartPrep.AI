@@ -2,6 +2,7 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
+  reasoning?: string;
   timestamp: number;
   model?: string;
 }
@@ -9,6 +10,7 @@ export interface ChatMessage {
 export interface ChatSession {
   id: string;
   title: string;
+  subtitle?: string;
   messages: ChatMessage[];
   createdAt: number;
   updatedAt: number;
@@ -16,6 +18,10 @@ export interface ChatSession {
   systemPrompt?: string;
   temperature: number;
   isPinned?: boolean;
+  attachedContexts?: {
+    type: 'note' | 'library';
+    id: string;
+  }[];
 }
 
 export interface UserSettings {

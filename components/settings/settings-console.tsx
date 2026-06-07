@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Key,
   ShieldCheck,
@@ -15,7 +16,9 @@ import {
   EyeOff,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  Database,
+  Type
 } from 'lucide-react';
 import { useSettingsStore } from '../../stores/settings-store';
 import { useChatStore } from '../../stores/chat-store';
@@ -23,9 +26,12 @@ import { useNotesStore } from '../../stores/notes-store';
 import { useToastStore } from '../../stores/toast-store';
 import { fetchModels } from '../../lib/openrouter/client';
 import { Button } from '../ui/button';
+import { ModelSelector } from '../ui/model-selector';
 import { Input } from '../ui/input';
 import { Select } from '../ui/select';
 import { Dialog } from '../ui/dialog';
+import { cn } from '../../lib/utils/cn';
+import { fadeUp, staggerContainer, springTransition } from '../../lib/utils/animations';
 
 export const SettingsConsole: React.FC = () => {
   const { settings, updateSettings, setApiKey, resetSettings } = useSettingsStore();
@@ -41,60 +47,39 @@ export const SettingsConsole: React.FC = () => {
 
   const handleTestConnection = async () => {
     if (!apiKeyInput.trim()) {
-      showToast('Key required', 'error', 'Please enter your API key first.');
+      showToast('Key Required', 'error', 'Enter your API key first.');
       return;
     }
-
     setIsTesting(true);
     setIsTested(false);
     try {
       const models = await fetchModels(apiKeyInput);
       if (models && models.length > 0) {
         setIsTested(true);
-        showToast('Success', 'success', 'Connection validated successfully.');
-      } else {
-        throw new Error('Authenticated but no active models returned.');
-      }
+        showToast('Success', 'success', 'Connection validated.');
+      } else throw new Error('No models returned.');
     } catch (e: any) {
-      showToast('Authentication Failed', 'error', e?.message || 'Invalid Key.');
-    } finally {
-      setIsTesting(false);
-    }
+      showToast('Failed', 'error', 'Invalid API Key.');
+    } finally { setIsTesting(false); }
   };
 
   const handleSaveApiKey = () => {
     setApiKey(apiKeyInput);
-    showToast('Saved', 'success', 'API key configured.');
+    showToast('Saved', 'success', 'Credentials updated.');
   };
 
   const handleRemoveKey = () => {
-    setApiKey('');
-    setApiKeyInput('');
-    setIsTested(false);
-    showToast('Key Removed', 'info', 'OpenRouter API Key deleted.');
+    setApiKey(''); setApiKeyInput(''); setIsTested(false);
+    showToast('Removed', 'info', 'API key deleted.');
   };
 
   const handleThemeChange = (theme: 'light' | 'dark' | 'system') => {
     updateSettings({ theme });
-    showToast('Theme Updated', 'success', `Theme switched to ${theme}.`);
+    showToast('Theme Updated', 'success', `Switched to ${theme}.`);
   };
 
-  const handleFontSizeChange = (fontSize: 'sm' | 'base' | 'lg') => {
-    updateSettings({ fontSize });
-    showToast('Font Size Updated', 'success', 'Font settings synced.');
-  };
-
-  // Compile JSON Backup
   const handleExportBackup = () => {
-    const backupData = {
-      version: 1,
-      timestamp: Date.now(),
-      settings,
-      sessions,
-      notes,
-      library,
-    };
-
+    const backupData = { version: 1, timestamp: Date.now(), settings, sessions, notes, library };
     const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -103,260 +88,242 @@ export const SettingsConsole: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast('Backup Created', 'success', 'All local workspace data compiled and downloaded.');
+    showToast('Backup Exported', 'success', 'Local data compiled.');
   };
 
-  // Import JSON Backup
   const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         const raw = event.target?.result as string;
         const backup = JSON.parse(raw);
-
-        if (!backup.version || !backup.settings) {
-          throw new Error('Invalid backup schema.');
-        }
-
-        // Apply backup states to Zustand
-        if (backup.settings) {
-          useSettingsStore.setState({ settings: backup.settings });
-          setApiKeyInput(backup.settings.apiKey);
-        }
+        if (!backup.version || !backup.settings) throw new Error('Invalid schema.');
+        if (backup.settings) { useSettingsStore.setState({ settings: backup.settings }); setApiKeyInput(backup.settings.apiKey); }
         if (backup.sessions) useChatStore.setState({ sessions: backup.sessions, activeSessionId: backup.sessions[0]?.id || null });
         if (backup.notes) useNotesStore.setState({ notes: backup.notes });
         if (backup.library) useNotesStore.setState({ library: backup.library });
-
-        showToast('Backup Restored', 'success', 'Workspace successfully migrated.');
-      } catch (err) {
-        showToast('Restoration Failed', 'error', 'Backup file corrupt or invalid.');
-      }
+        showToast('Restored', 'success', 'Workspace migrated.');
+      } catch (err) { showToast('Failed', 'error', 'Invalid backup file.'); }
     };
     reader.readAsText(file);
   };
 
   const handleWipeAllData = () => {
-    // Delete all localStorage states
-    resetSettings();
-    clearAllSessions();
-    clearAllNotesAndLibrary();
-    setApiKeyInput('');
-    setIsTested(false);
-    setShowClearConfirm(false);
-    showToast('Wipe Complete', 'info', 'All local records successfully erased.');
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+    resetSettings(); clearAllSessions(); clearAllNotesAndLibrary();
+    setApiKeyInput(''); setIsTested(false); setShowClearConfirm(false);
+    showToast('Wipe Complete', 'info', 'Workspace erased.');
+    setTimeout(() => { window.location.reload(); }, 500);
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background overflow-hidden text-xs">
+    <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
       
-      {/* Top Header */}
-      <div className="h-14 border-b border-border px-6 flex items-center justify-between flex-shrink-0 bg-card select-none">
-        <div>
-          <h2 className="text-sm font-semibold text-foreground">Settings Console</h2>
-          <p className="text-[10px] text-muted-foreground mt-0.5">Control API integrations, layouts, backup parameters, and theme profiles.</p>
+      {/* Header */}
+      <div className="h-16 px-8 flex items-center justify-between flex-shrink-0 bg-background/80 backdrop-blur-md border-b border-border/40 z-10">
+        <div className="flex items-center space-x-4">
+          <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-primary">
+            <Sliders className="h-4.5 w-4.5" />
+          </div>
+          <div>
+            <h2 className="text-[14px] font-bold text-foreground">Settings Console</h2>
+            <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest mt-0.5">Workspace configuration & parameters</p>
+          </div>
         </div>
       </div>
 
-      {/* Grid container */}
-      <div className="flex-1 overflow-y-auto p-6 md:p-8">
-        <div className="max-w-2xl mx-auto space-y-6 select-none">
-          
-          {/* Box 1: OpenRouter Credentials */}
-          <div className="bg-card border border-border rounded-lg p-5 flex flex-col space-y-4">
-            <div className="flex items-center space-x-2 text-foreground font-semibold">
-              <Key className="h-4 w-4 text-primary" />
-              <span>OpenRouter Credentials</span>
+      <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <motion.div 
+          variants={staggerContainer} initial="initial" animate="animate"
+          className="max-w-3xl mx-auto space-y-6"
+        >
+          {/* API Key Panel */}
+          <motion.div variants={fadeUp} className="bg-card border border-border/60 rounded-[24px] p-8 space-y-6 shadow-sm">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-primary">
+                <Key className="h-4 w-4" />
+              </div>
+              <h3 className="text-sm font-bold text-foreground tracking-tight">OpenRouter Credentials</h3>
             </div>
 
-            <div className="relative">
-              <Input
-                label="API Key"
-                type={showKey ? 'text' : 'password'}
-                placeholder="sk-or-v1-..."
-                value={apiKeyInput}
-                onChange={(e) => {
-                  setApiKeyInput(e.target.value);
-                  setIsTested(false);
-                }}
-                className="pr-16"
-              />
-              <button
-                onClick={() => setShowKey(!showKey)}
-                className="absolute right-3 top-[2.1rem] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-              >
-                {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-
-            <div className="flex space-x-3.5 pt-1">
-              <Button variant="outline" onClick={handleTestConnection} isLoading={isTesting} className="font-semibold">
-                Test Connection
-              </Button>
-              <Button onClick={handleSaveApiKey} disabled={apiKeyInput === settings.apiKey} className="font-semibold">
-                Save Key
-              </Button>
-              {settings.apiKey && (
-                <Button variant="ghost" onClick={handleRemoveKey} className="text-destructive hover:bg-destructive/10 font-semibold">
-                  Remove Key
-                </Button>
-              )}
-
-              {isTested && (
-                <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center px-4 rounded text-xs font-semibold space-x-1.5 animate-in zoom-in-95">
-                  <CheckCircle2 className="h-4.5 w-4.5" />
-                  <span>Verified</span>
+            <div className="space-y-4">
+              <div className="relative group">
+                <label className="text-[9px] font-black text-primary/60 uppercase tracking-[0.2em] ml-1 block mb-1.5">API Key</label>
+                <div className="relative">
+                  <input
+                    type={showKey ? 'text' : 'password'}
+                    placeholder="sk-or-v1-..."
+                    value={apiKeyInput}
+                    onChange={(e) => { setApiKeyInput(e.target.value); setIsTested(false); }}
+                    className="w-full bg-background border border-border/60 rounded-xl p-3 text-[13px] font-medium outline-none focus:ring-1 focus:ring-primary/40 focus:bg-secondary/20 transition-all pr-12"
+                  />
+                  <button
+                    onClick={() => setShowKey(!showKey)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
-              )}
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Button variant="outline" onClick={handleTestConnection} isLoading={isTesting} className="h-9 px-5 rounded-lg font-bold uppercase tracking-widest text-[10px] transition-all">
+                  Test Connection
+                </Button>
+                <Button onClick={handleSaveApiKey} disabled={apiKeyInput === settings.apiKey} className="h-9 px-5 rounded-lg font-bold uppercase tracking-widest text-[10px] shadow-none">
+                  Save Key
+                </Button>
+                {settings.apiKey && (
+                  <Button variant="ghost" onClick={handleRemoveKey} className="h-9 px-5 rounded-lg font-bold uppercase tracking-widest text-[10px] text-destructive hover:bg-destructive/10 transition-all">
+                    Remove
+                  </Button>
+                )}
+                <AnimatePresence>
+                  {isTested && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                      className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center px-4 rounded-lg text-[10px] font-bold uppercase tracking-widest space-x-1.5"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <span>Verified</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Box 2: Visual Interface Preferences */}
-          <div className="bg-card border border-border rounded-lg p-5 flex flex-col space-y-4">
-            <div className="flex items-center space-x-2 text-foreground font-semibold">
-              <Sliders className="h-4 w-4 text-primary" />
-              <span>Workspace Preferences</span>
+          {/* Preferences Panel */}
+          <motion.div variants={fadeUp} className="bg-card border border-border/60 rounded-[24px] p-8 space-y-8 shadow-sm">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-primary">
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <h3 className="text-sm font-bold text-foreground tracking-tight">Workspace Preferences</h3>
             </div>
 
-            {/* Theme picker buttons */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Theme Profile
-              </label>
-              <div className="grid grid-cols-3 gap-3 pt-1 max-w-sm">
-                <button
-                  onClick={() => handleThemeChange('dark')}
-                  className={`flex items-center justify-center space-x-2 p-2.5 rounded border transition-all cursor-pointer ${
-                    settings.theme === 'dark'
-                      ? 'bg-primary/5 border-primary text-foreground font-medium'
-                      : 'border-border bg-card text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Moon className="h-4 w-4 text-indigo-400" />
-                  <span>Dark Mode</span>
-                </button>
-
-                <button
-                  onClick={() => handleThemeChange('light')}
-                  className={`flex items-center justify-center space-x-2 p-2.5 rounded border transition-all cursor-pointer ${
-                    settings.theme === 'light'
-                      ? 'bg-primary/5 border-primary text-foreground font-medium'
-                      : 'border-border bg-card text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Sun className="h-4 w-4 text-amber-500" />
-                  <span>Light Mode</span>
-                </button>
-
-                <button
-                  onClick={() => handleThemeChange('system')}
-                  className={`flex items-center justify-center space-x-2 p-2.5 rounded border transition-all cursor-pointer ${
-                    settings.theme === 'system'
-                      ? 'bg-primary/5 border-primary text-foreground font-medium'
-                      : 'border-border bg-card text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Monitor className="h-4 w-4 text-sky-400" />
-                  <span>System</span>
-                </button>
+            <div className="space-y-3">
+              <label className="text-[9px] font-black text-primary/60 uppercase tracking-[0.2em] ml-1 block">Theme Profile</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { id: 'dark', label: 'Dark Mode', icon: <Moon className="h-4 w-4 text-indigo-400" /> },
+                  { id: 'light', label: 'Light Mode', icon: <Sun className="h-4 w-4 text-amber-500" /> },
+                  { id: 'system', label: 'System', icon: <Monitor className="h-4 w-4 text-sky-400" /> }
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleThemeChange(item.id as any)}
+                    className={cn(
+                      "flex items-center justify-center space-x-2.5 p-3 rounded-xl border transition-all duration-300",
+                      settings.theme === item.id 
+                        ? "bg-secondary border-primary/30 text-foreground font-bold" 
+                        : "border-border/40 bg-background text-muted-foreground hover:bg-secondary/40"
+                    )}
+                  >
+                    {item.icon}
+                    <span className="text-[10px] uppercase tracking-widest">{item.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Font Picker & Options */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4.5 pt-2">
-              <Select
-                label="Message Font Size"
-                value={settings.fontSize}
-                onChange={(e) => handleFontSizeChange(e.target.value as any)}
-                options={[
-                  { label: 'Small (Compact lines)', value: 'sm' },
-                  { label: 'Standard', value: 'base' },
-                  { label: 'Large (Easy visibility)', value: 'lg' },
-                ]}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+              <div className="space-y-2">
+                <label className="text-[9px] font-black text-primary/60 uppercase tracking-[0.2em] ml-1 block">Font Size</label>
+                <select 
+                  value={settings.fontSize} 
+                  onChange={(e) => updateSettings({ fontSize: e.target.value as any })}
+                  className="w-full bg-background border border-border/60 rounded-xl p-3 text-[11px] font-bold uppercase tracking-widest outline-none focus:ring-1 focus:ring-primary/40 appearance-none transition-all text-foreground"
+                >
+                  <option value="sm">Compact</option>
+                  <option value="base">Standard</option>
+                  <option value="lg">Large</option>
+                </select>
+              </div>
 
-              <Select
-                label="Auto-Title Conversations"
-                value={settings.autoTitle ? 'true' : 'false'}
-                onChange={(e) => updateSettings({ autoTitle: e.target.value === 'true' })}
-                options={[
-                  { label: 'Enabled (AI generated titles)', value: 'true' },
-                  { label: 'Disabled (Keep Default titles)', value: 'false' },
-                ]}
-              />
-            </div>
-          </div>
-
-          {/* Box 3: Data Migration Options */}
-          <div className="bg-card border border-border rounded-lg p-5 flex flex-col space-y-4">
-            <div className="flex items-center space-x-2 text-foreground font-semibold">
-              <Download className="h-4 w-4 text-primary" />
-              <span>Data Migration & Backups</span>
+              <div className="space-y-2">
+                <label className="text-[9px] font-black text-primary/60 uppercase tracking-[0.2em] ml-1 block">Auto-Title</label>
+                <select 
+                  value={settings.autoTitle ? 'true' : 'false'} 
+                  onChange={(e) => updateSettings({ autoTitle: e.target.value === 'true' })}
+                  className="w-full bg-background border border-border/60 rounded-xl p-3 text-[11px] font-bold uppercase tracking-widest outline-none focus:ring-1 focus:ring-primary/40 appearance-none transition-all text-foreground"
+                >
+                  <option value="true">Enabled</option>
+                  <option value="false">Disabled</option>
+                </select>
+              </div>
             </div>
 
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Export comprehensive backups of all settings, chat records, quiz histories, saved cards, and library textbook notes in a single JSON schema. Restore backups dynamically.
+            <div className="space-y-3 pt-4 border-t border-border/40">
+              <label className="text-[9px] font-black text-primary/60 uppercase tracking-[0.2em] ml-1 block">Default Intelligence Brain</label>
+              <div className="bg-background border border-border/60 rounded-2xl p-5">
+                <ModelSelector 
+                  selectedModelId={settings.defaultModel} 
+                  onSelect={(modelId) => updateSettings({ defaultModel: modelId })} 
+                  apiKey={settings.apiKey}
+                  maxHeight="320px"
+                />
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Backup Panel */}
+          <motion.div variants={fadeUp} className="bg-card border border-border/60 rounded-[24px] p-8 space-y-5 shadow-sm">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-primary">
+                <Database className="h-4 w-4" />
+              </div>
+              <h3 className="text-sm font-bold text-foreground tracking-tight">Data Migration</h3>
+            </div>
+
+            <p className="text-[12px] text-muted-foreground/80 leading-relaxed font-medium">
+              Manage your local knowledge base. You can export everything to a JSON file or restore a previous backup.
             </p>
 
-            <div className="flex flex-wrap gap-3.5 pt-1.5">
-              <Button variant="outline" onClick={handleExportBackup} className="font-semibold flex items-center space-x-1.5 h-9.5">
-                <Download className="h-4 w-4" />
-                <span>Export JSON Backup</span>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Button variant="outline" onClick={handleExportBackup} className="h-9 px-5 rounded-lg font-bold uppercase tracking-widest text-[10px] transition-all">
+                <Download className="h-3.5 w-3.5 mr-2" />
+                Export JSON
               </Button>
 
               <div className="relative">
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImportBackup}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                />
-                <Button variant="outline" className="font-semibold flex items-center space-x-1.5 h-9.5">
-                  <Upload className="h-4 w-4" />
-                  <span>Import JSON Backup</span>
+                <input type="file" accept=".json" onChange={handleImportBackup} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                <Button variant="outline" className="h-9 px-5 rounded-lg font-bold uppercase tracking-widest text-[10px] transition-all">
+                  <Upload className="h-3.5 w-3.5 mr-2" />
+                  Import JSON
                 </Button>
               </div>
 
-              <Button
-                variant="ghost"
-                onClick={() => setShowClearConfirm(true)}
-                className="text-destructive hover:bg-destructive/10 font-semibold flex items-center space-x-1.5 h-9.5"
+              <Button 
+                variant="ghost" onClick={() => setShowClearConfirm(true)} 
+                className="h-9 px-5 rounded-lg font-bold uppercase tracking-widest text-[10px] text-destructive hover:bg-destructive/10 transition-all ml-auto"
               >
-                <Trash2 className="h-4 w-4" />
-                <span>Clear All Local Data</span>
+                <Trash2 className="h-3.5 w-3.5 mr-2" />
+                Wipe Data
               </Button>
             </div>
-          </div>
-
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
 
-      {/* Wipe Confirmation Dialog */}
       <Dialog
-        isOpen={showClearConfirm}
-        onClose={() => setShowClearConfirm(false)}
-        title="Wipe Local Workspace Data"
+        isOpen={showClearConfirm} onClose={() => setShowClearConfirm(false)}
+        title="Destroy All Local Data?"
         footer={
           <div className="flex space-x-2">
-            <Button variant="ghost" onClick={() => setShowClearConfirm(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleWipeAllData}>
-              Wipe Everything
-            </Button>
+            <Button variant="ghost" onClick={() => setShowClearConfirm(false)} className="rounded-xl font-bold uppercase tracking-wider text-[10px]">Cancel</Button>
+            <Button variant="destructive" onClick={handleWipeAllData} className="rounded-xl font-bold uppercase tracking-wider text-[10px]">Confirm Destruction</Button>
           </div>
         }
       >
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Are you absolutely sure you want to delete all local API keys, persistent configurations, conversation threads, saved study notes, and textbook documents? This action is destructive and cannot be undone.
+        <p className="text-[13px] text-muted-foreground leading-relaxed font-medium">
+          This will permanently delete all chat history, study notes, library resources, and settings. This cannot be undone.
         </p>
       </Dialog>
     </div>
   );
 };
+
 export default SettingsConsole;
+
