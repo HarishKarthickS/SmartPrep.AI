@@ -1,10 +1,10 @@
-import { Variants } from "framer-motion";
+import { Variants, Transition } from "framer-motion";
 
 /**
  * Standardized Spring Physics for a physical, organic feel.
  * Apple-like fluidity: high stiffness, high damping.
  */
-export const springTransition = {
+export const springTransition: Transition = {
   type: "spring",
   stiffness: 300,
   damping: 30,

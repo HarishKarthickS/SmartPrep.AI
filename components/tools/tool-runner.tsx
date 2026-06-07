@@ -9,10 +9,8 @@ import { AITool } from '../../types/tools';
 import { useSettingsStore } from '../../stores/settings-store';
 import { useToastStore } from '../../stores/toast-store';
 import { useNotesStore } from '../../stores/notes-store';
-import { streamChatCompletions } from '../../lib/openrouter/client';
+import { streamChatCompletions, fetchModels } from '../../lib/openrouter/client';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Select } from '../ui/select';
 import { cn } from '../../lib/utils/cn';
 import { fadeUp, springTransition } from '../../lib/utils/animations';
 
@@ -30,6 +28,9 @@ export const ToolRunner: React.FC<ToolRunnerProps> = ({ tool, onBack }) => {
   const [selectedModel, setSelectedModel] = useState(tool.modelPreset || settings.defaultModel);
   const [availableModels, setAvailableModels] = useState<{id: string, name: string}[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [output, setOutput] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [controller, setController] = useState<AbortController | null>(null);
 
   useEffect(() => {
     const loadModels = async () => {

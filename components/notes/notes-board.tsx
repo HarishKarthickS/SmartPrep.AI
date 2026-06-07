@@ -24,7 +24,6 @@ import { useNotesStore } from '../../stores/notes-store';
 import { useChatStore } from '../../stores/chat-store';
 import { useToastStore } from '../../stores/toast-store';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 import { cn } from '../../lib/utils/cn';
 import { fadeUp, staggerContainer, hoverScale, springTransition } from '../../lib/utils/animations';
 
@@ -187,19 +186,22 @@ export const NotesBoard: React.FC = () => {
                   </div>
                 ) : (
                   filteredNotes.map((note) => (
-                    <motion.div
-                      layout
-                      variants={fadeUp}
+                    <div
                       key={note.id}
                       draggable
-                      onDragStart={(e) => {
+                      onDragStart={(e: React.DragEvent) => {
                         e.dataTransfer.setData('application/smartprep-item', JSON.stringify({ type: 'note', id: note.id }));
                         e.dataTransfer.effectAllowed = 'copy';
                       }}
-                      onClick={() => { setActiveNoteId(note.id); setIsEditing(false); }}
-                      className="group p-4 rounded-xl cursor-grab active:cursor-grabbing transition-all border border-border/30 bg-card hover:bg-secondary/40 hover:border-primary/20"
+                      className="group"
                     >
-                      <div className="flex items-start justify-between mb-2">
+                      <motion.div
+                        layout
+                        variants={fadeUp}
+                        onClick={() => { setActiveNoteId(note.id); setIsEditing(false); }}
+                        className="p-4 rounded-xl cursor-grab active:cursor-grabbing transition-all border border-border/30 bg-card hover:bg-secondary/40 hover:border-primary/20"
+                      >
+                        <div className="flex items-start justify-between mb-2">
                         <p className="font-bold text-[13px] text-foreground truncate">{note.title}</p>
                         <button
                           onClick={(e) => handleDelete(note.id, e)}
@@ -212,7 +214,8 @@ export const NotesBoard: React.FC = () => {
                         {note.content.replace(/[#*`>_-]/g, '').slice(0, 80)}
                       </p>
                     </motion.div>
-                  ))
+                    </div>
+                    ))
                 )}
               </motion.div>
             </div>

@@ -105,12 +105,7 @@ export default function App() {
               {activeTab === 'settings' ? (
                 <SettingsConsole />
               ) : (
-                <ChatArea 
-                  setIsRightPanelOpen={setIsRightPanelOpen} 
-                  isRightPanelOpen={isRightPanelOpen}
-                  isZenMode={isZenMode}
-                  setIsZenMode={setIsZenMode}
-                />
+                <ChatArea />
               )}
             </div>
           </motion.div>

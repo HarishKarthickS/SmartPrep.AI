@@ -24,8 +24,6 @@ import { useNotesStore } from '../../stores/notes-store';
 import { useChatStore } from '../../stores/chat-store';
 import { useToastStore } from '../../stores/toast-store';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Select } from '../ui/select';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { cn } from '../../lib/utils/cn';
@@ -249,19 +247,22 @@ export const LibraryBoard: React.FC = () => {
                   </div>
                 ) : (
                   filteredLibrary.map((item) => (
-                    <motion.div
-                      layout
-                      variants={fadeUp}
+                    <div
                       key={item.id}
                       draggable
-                      onDragStart={(e) => {
+                      onDragStart={(e: React.DragEvent) => {
                         e.dataTransfer.setData('application/smartprep-item', JSON.stringify({ type: 'library', id: item.id }));
                         e.dataTransfer.effectAllowed = 'copy';
                       }}
-                      onClick={() => setActiveItemId(item.id)}
-                      className="group p-4 rounded-xl cursor-grab active:cursor-grabbing transition-all border border-border/30 bg-card hover:bg-secondary/40 hover:border-primary/20"
+                      className="group"
                     >
-                      <div className="flex items-start justify-between mb-2">
+                      <motion.div
+                        layout
+                        variants={fadeUp}
+                        onClick={() => setActiveItemId(item.id)}
+                        className="p-4 rounded-xl cursor-grab active:cursor-grabbing transition-all border border-border/30 bg-card hover:bg-secondary/40 hover:border-primary/20"
+                      >
+                        <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center space-x-2 min-w-0">
                           {getIcon(item.type, false)}
                           <p className="font-bold text-[13px] text-foreground truncate">{item.title}</p>
@@ -277,7 +278,8 @@ export const LibraryBoard: React.FC = () => {
                         {item.content.replace(/[#*`>_-]/g, '').slice(0, 80)}
                       </p>
                     </motion.div>
-                  ))
+                    </div>
+                    ))
                 )}
               </motion.div>
             </div>

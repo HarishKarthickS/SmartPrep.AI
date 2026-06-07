@@ -27,8 +27,6 @@ import { useToastStore } from '../../stores/toast-store';
 import { fetchModels } from '../../lib/openrouter/client';
 import { Button } from '../ui/button';
 import { ModelSelector } from '../ui/model-selector';
-import { Input } from '../ui/input';
-import { Select } from '../ui/select';
 import { Dialog } from '../ui/dialog';
 import { cn } from '../../lib/utils/cn';
 import { fadeUp, staggerContainer, springTransition } from '../../lib/utils/animations';
