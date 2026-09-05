@@ -1,52 +1,64 @@
 @import "tailwindcss";
 
 :root {
-  --background: 40 20% 98%; /* Warm Paper */
-  --foreground: 220 15% 12%; /* Ink */
-  --card: 40 20% 99%;
-  --card-foreground: 220 15% 12%;
-  --popover: 40 20% 99%;
-  --popover-foreground: 220 15% 12%;
-  --primary: 220 15% 12%;
-  --primary-foreground: 40 20% 98%;
-  --secondary: 40 15% 95%;
-  --secondary-foreground: 220 15% 12%;
-  --muted: 40 10% 93%;
-  --muted-foreground: 220 15% 40%;
-  --accent: 40 10% 94%;
-  --accent-foreground: 220 15% 12%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 40 20% 98%;
-  --border: 220 15% 88%;
-  --input: 220 15% 88%;
-  --ring: 220 15% 12%;
-  --radius: 8px; /* Slightly sharper for workspace feel */
-  
-  /* Claude-like Surfaces */
-  --surface-low: 40 20% 96%;
-  --surface-high: 40 20% 100%;
+  /* Cool notebook paper — not ledger cream, not exam white */
+  --background: 205 22% 91%;
+  --foreground: 215 35% 14%;
+  --card: 205 28% 96%;
+  --card-foreground: 215 35% 14%;
+  --popover: 205 28% 97%;
+  --popover-foreground: 215 35% 14%;
+  /* Verdigris annotation ink */
+  --primary: 168 38% 28%;
+  --primary-foreground: 48 40% 96%;
+  --secondary: 205 18% 88%;
+  --secondary-foreground: 215 28% 18%;
+  --muted: 205 16% 86%;
+  --muted-foreground: 210 14% 38%;
+  --accent: 12 42% 42%;
+  --accent-foreground: 40 40% 96%;
+  --destructive: 4 62% 42%;
+  --destructive-foreground: 40 40% 98%;
+  --border: 205 16% 78%;
+  --input: 205 16% 78%;
+  --ring: 168 38% 28%;
+  --radius: 3px;
+  --desk: 22 32% 18%;
+  --desk-highlight: 28 24% 26%;
+  --ruled: 205 18% 80%;
+  --annotation: 168 32% 32%;
+  --bookmark: 12 45% 42%;
+  --surface-low: 205 20% 88%;
+  --surface-high: 205 30% 98%;
 }
 
 .dark {
-  --background: 220 15% 10%; /* Dark Charcoal */
-  --foreground: 40 15% 88%; /* Soft Paper Text */
-  --card: 220 15% 12%;
-  --card-foreground: 40 15% 88%;
-  --popover: 220 15% 12%;
-  --popover-foreground: 40 15% 88%;
-  --primary: 40 15% 88%;
-  --primary-foreground: 220 15% 10%;
-  --secondary: 220 15% 16%;
-  --secondary-foreground: 40 15% 88%;
-  --muted: 220 15% 16%;
-  --muted-foreground: 220 15% 60%;
-  --accent: 220 15% 16%;
-  --accent-foreground: 40 15% 88%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 40 15% 98%;
-  --border: 220 15% 22%;
-  --input: 220 15% 22%;
-  --ring: 40 15% 88%;
+  --background: 28 16% 12%;
+  --foreground: 40 18% 88%;
+  --card: 28 14% 15%;
+  --card-foreground: 40 18% 88%;
+  --popover: 28 14% 16%;
+  --popover-foreground: 40 18% 88%;
+  --primary: 168 28% 52%;
+  --primary-foreground: 22 32% 10%;
+  --secondary: 28 12% 18%;
+  --secondary-foreground: 40 18% 88%;
+  --muted: 28 12% 18%;
+  --muted-foreground: 35 12% 62%;
+  --accent: 12 38% 52%;
+  --accent-foreground: 28 16% 10%;
+  --destructive: 4 48% 48%;
+  --destructive-foreground: 40 20% 96%;
+  --border: 28 10% 24%;
+  --input: 28 10% 24%;
+  --ring: 168 28% 52%;
+  --desk: 22 28% 8%;
+  --desk-highlight: 24 20% 14%;
+  --ruled: 28 10% 22%;
+  --annotation: 168 26% 52%;
+  --bookmark: 12 40% 48%;
+  --surface-low: 28 14% 11%;
+  --surface-high: 28 12% 18%;
 }
 
 @theme inline {
@@ -69,18 +81,24 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
-  --radius-xl: var(--radius);
-  --radius-lg: calc(var(--radius) - 2px);
-  --radius-md: calc(var(--radius) - 4px);
-  --radius-sm: calc(var(--radius) - 6px);
-  --font-serif: "Charter", "Bitstream Charter", "Sitka Text", "Cambria", "Georgia", serif;
-  --font-sans: "Inter", "Geist", system-ui, -apple-system, sans-serif;
+  --color-desk: hsl(var(--desk));
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-lg: var(--radius);
+  --radius-md: var(--radius);
+  --radius-sm: 2px;
+  --font-serif: var(--font-alegreya), "Alegreya", "Palatino Linotype", Palatino, serif;
+  --font-sans: var(--font-alegreya-sans), "Alegreya Sans", "Segoe UI", sans-serif;
+  --font-mono: var(--font-azeret), "Azeret Mono", ui-monospace, monospace;
+}
+
+html {
+  font-family: var(--font-serif);
 }
 
 body {
-  background-color: hsl(var(--background));
+  background-color: hsl(var(--desk));
   color: hsl(var(--foreground));
-  font-family: var(--font-sans);
+  font-family: var(--font-serif);
   height: 100vh;
   width: 100vw;
   margin: 0;
@@ -89,58 +107,144 @@ body {
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Claude-style Prose */
+.desk {
+  background-color: hsl(var(--desk));
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, hsl(var(--desk-highlight) / 0.55), transparent 55%),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 11px,
+      hsl(22 20% 12% / 0.12) 11px,
+      hsl(22 20% 12% / 0.12) 12px
+    );
+}
+
+.paper-grain {
+  background-color: hsl(var(--card));
+  background-image:
+    linear-gradient(hsl(var(--ruled) / 0.35) 1px, transparent 1px),
+    radial-gradient(hsl(215 20% 40% / 0.04) 0.6px, transparent 0.7px);
+  background-size: 100% 1.7rem, 3px 3px;
+  background-position: 0 0.4rem, 0 0;
+}
+
+.paper-stack {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow:
+    3px 3px 0 hsl(var(--background)),
+    4px 4px 0 hsl(var(--border)),
+    7px 7px 0 hsl(205 18% 86% / 0.9),
+    8px 8px 0 hsl(var(--border) / 0.55);
+}
+
+.dark .paper-stack {
+  box-shadow:
+    3px 3px 0 hsl(var(--background)),
+    4px 4px 0 hsl(var(--border)),
+    7px 7px 0 hsl(28 12% 10%),
+    8px 8px 0 hsl(var(--border) / 0.7);
+}
+
+.bookmark-tab {
+  position: relative;
+}
+
+.bookmark-tab::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 1.25rem;
+  width: 0.55rem;
+  height: 1.1rem;
+  background: hsl(var(--bookmark));
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+}
+
+.label-shelf {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: hsl(var(--annotation));
+}
+
+.margin-note {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: hsl(var(--annotation));
+}
+
 .prose {
   font-family: var(--font-serif);
   font-size: 1.125rem;
-  line-height: 1.7;
+  line-height: 1.75;
   color: hsl(var(--foreground));
 }
 
-.prose h1, .prose h2, .prose h3, .prose h4 {
-  font-family: var(--font-sans);
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  font-family: var(--font-serif);
   font-weight: 700;
-  letter-spacing: -0.03em;
-  margin-top: 2rem;
-  margin-bottom: 0.75rem;
+  letter-spacing: -0.01em;
+  margin-top: 1.75rem;
+  margin-bottom: 0.65rem;
   color: hsl(var(--foreground));
 }
 
 .prose p {
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
+  margin-top: 0.45rem;
+  margin-bottom: 0.95rem;
 }
+
 .prose code {
-  font-family: "Geist Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   background: hsl(var(--muted));
-  padding: 0.15rem 0.3rem;
-  border-radius: 4px;
-  font-size: 0.9em;
+  padding: 0.12rem 0.28rem;
+  border-radius: 2px;
+  font-size: 0.85em;
   font-weight: 500;
 }
+
 .prose pre {
-  margin: 1.5rem 0;
-  padding: 1.25rem;
-  border-radius: 8px;
+  margin: 1.35rem 0;
+  padding: 1.1rem;
+  border-radius: 2px;
   background: hsl(var(--secondary));
   border: 1px solid hsl(var(--border));
   overflow-x: auto;
 }
+
 .prose pre code {
   padding: 0;
   background: transparent;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   line-height: 1.5;
 }
+
 .prose blockquote {
-  border-left: 3px solid hsl(var(--border));
-  padding-left: 1.5rem;
+  border-left: 2px solid hsl(var(--bookmark));
+  padding-left: 1.15rem;
   color: hsl(var(--muted-foreground));
-  margin: 1.5rem 0;
+  margin: 1.35rem 0;
   font-style: italic;
 }
 
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 0;
+}

@@ -32,17 +32,17 @@ export const Workspace: React.FC = () => {
   ] as const;
 
   return (
-    <div className="h-full flex flex-col bg-card overflow-hidden">
+    <div className="h-full flex flex-col bg-transparent overflow-hidden">
       {/* Workspace Header with Tabs */}
-      <div className="flex-shrink-0 px-6 pt-5 pb-0 border-b border-border/40 bg-secondary/10">
+      <div className="flex-shrink-0 px-6 pt-5 pb-0 border-b border-border">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-sm">
+            <div className="w-8 h-8 bg-secondary border border-border flex items-center justify-center text-primary">
               <Layout className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-[13px] font-bold text-foreground tracking-tight leading-none">AI Workspace</h2>
-              <p className="text-[9px] text-muted-foreground/50 font-black uppercase tracking-widest mt-1 leading-none">Interactive Tools</p>
+              <h2 className="text-[16px] font-serif font-bold text-foreground leading-none">Loose papers</h2>
+              <p className="label-shelf mt-1.5 leading-none">Notes · sources · drafts</p>
             </div>
           </div>
           <button 
@@ -59,10 +59,10 @@ export const Workspace: React.FC = () => {
               key={tab.id}
               onClick={() => setActiveRightTab(tab.id)}
               className={cn(
-                "relative px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 rounded-t-xl border-x border-t border-transparent",
+                "relative px-4 py-2.5 text-[11px] font-sans transition-all flex items-center space-x-2 border-x border-t border-transparent",
                 activeRightTab === tab.id 
-                  ? "bg-card border-border/40 text-primary" 
-                  : "text-muted-foreground/40 hover:text-foreground hover:bg-secondary/40"
+                  ? "bg-card border-border text-primary" 
+                  : "text-muted-foreground/50 hover:text-foreground hover:bg-secondary/40"
               )}
             >
               {tab.icon}

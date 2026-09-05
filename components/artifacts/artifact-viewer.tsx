@@ -21,7 +21,7 @@ export const ArtifactViewer: React.FC = () => {
         <div className="w-16 h-16 rounded-full border-2 border-dashed border-border/40 flex items-center justify-center">
           <Maximize2 className="h-6 w-6" />
         </div>
-        <p className="text-[11px] font-black uppercase tracking-[0.2em]">Ready for Artifacts</p>
+        <p className="text-[13px] font-serif text-muted-foreground">Nothing on this stack yet.</p>
       </div>
     );
   }
@@ -44,7 +44,7 @@ export const ArtifactViewer: React.FC = () => {
             <Loader2 className="h-4 w-4 animate-spin" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[11px] font-black text-foreground uppercase tracking-tight leading-none">{title || 'Preview'}</span>
+            <span className="text-[13px] font-serif text-foreground leading-none">{title || 'Preview'}</span>
             <span className="text-[9px] text-muted-foreground/40 font-bold uppercase tracking-widest mt-1 leading-none">{language.toUpperCase()} Artifact</span>
           </div>
         </div>

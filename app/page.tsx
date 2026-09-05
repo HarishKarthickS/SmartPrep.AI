@@ -2,11 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
 import Sidebar from '../components/layout/sidebar';
 import { ChatArea } from '../components/chat/chat-area';
 import { Workspace } from '../components/layout/workspace';
-import ToolsHub from '../components/tools/tools-hub';
 import SettingsConsole from '../components/settings/settings-console';
 
 import { Onboarding } from '../components/settings/onboarding';
@@ -34,13 +32,13 @@ export default function App() {
 
   if (!hasMounted) {
     return (
-      <div className="min-h-screen w-screen bg-background flex flex-col items-center justify-center space-y-6">
+      <div className="min-h-screen w-screen desk flex flex-col items-center justify-center space-y-6">
         <div className="relative">
           <div className="h-10 w-10 rounded-full border-2 border-primary/10" />
           <div className="h-10 w-10 rounded-full border-t-2 border-primary animate-spin absolute inset-0" />
         </div>
-        <p className="text-[9px] text-primary font-bold uppercase tracking-[0.3em] animate-pulse">
-          SmartPrep AI
+        <p className="label-shelf animate-pulse">
+          Opening the desk
         </p>
       </div>
     );
@@ -56,9 +54,8 @@ export default function App() {
   }
 
   return (
-    <div className="relative flex h-screen w-screen overflow-hidden bg-background font-sans select-none antialiased text-foreground">
-      {/* Structural Background */}
-      <div className="absolute inset-0 z-0 bg-background" />
+    <div className="relative flex h-screen w-screen overflow-hidden desk font-serif select-none antialiased text-foreground">
+      <div className="absolute inset-0 z-0 pointer-events-none" />
 
       <AnimatePresence>
         {!isZenMode && (
@@ -99,8 +96,8 @@ export default function App() {
             )}
           >
             <div className={cn(
-              "flex-1 overflow-hidden relative border border-border/40 shadow-sm",
-              !isZenMode ? "bg-card rounded-[20px]" : "bg-background border-none shadow-none"
+              "flex-1 overflow-hidden relative bookmark-tab",
+              !isZenMode ? "paper-stack paper-grain" : "bg-card border-none shadow-none"
             )}>
               {activeTab === 'settings' ? (
                 <SettingsConsole />
@@ -121,7 +118,7 @@ export default function App() {
               transition={springTransition}
               className="flex-1 h-full flex flex-col z-20"
             >
-              <div className="flex-1 bg-card border border-border/40 rounded-[20px] overflow-hidden relative shadow-sm">
+              <div className="flex-1 paper-stack paper-grain overflow-hidden relative">
                 <Workspace />
               </div>
             </motion.div>

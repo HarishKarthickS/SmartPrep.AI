@@ -26,11 +26,11 @@ export const ToolsHub: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const iconMap: Record<string, React.ReactNode> = {
-    FileText: <FileText className="h-5 w-5 text-indigo-500" />,
-    HelpCircle: <HelpCircle className="h-5 w-5 text-amber-500" />,
-    Layers: <Layers className="h-5 w-5 text-emerald-500" />,
-    BrainCircuit: <BrainCircuit className="h-5 w-5 text-sky-500" />,
-    Calendar: <Calendar className="h-5 w-5 text-rose-500" />,
+    FileText: <FileText className="h-5 w-5 text-primary" />,
+    HelpCircle: <HelpCircle className="h-5 w-5 text-accent" />,
+    Layers: <Layers className="h-5 w-5 text-primary" />,
+    BrainCircuit: <BrainCircuit className="h-5 w-5 text-accent" />,
+    Calendar: <Calendar className="h-5 w-5 text-primary" />,
   };
 
   const filteredTools = defaultTools.filter(
@@ -53,8 +53,8 @@ export const ToolsHub: React.FC = () => {
             <Wrench className="h-4.5 w-4.5" />
           </div>
           <div>
-            <h2 className="text-[14px] font-bold text-foreground">Intelligence Hub</h2>
-            <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest mt-0.5">Accelerate your workflow</p>
+            <h2 className="text-[16px] font-serif font-bold text-foreground">Study masks</h2>
+            <p className="label-shelf mt-0.5">Prompt templates on this desk</p>
           </div>
         </div>
 
@@ -62,7 +62,7 @@ export const ToolsHub: React.FC = () => {
           <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground/30 group-focus-within:text-primary transition-colors" />
           <input
             type="text"
-            placeholder="Search intelligence masks..."
+            placeholder="Search templates..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full h-9 bg-secondary border border-border/40 rounded-xl pl-10 pr-4 text-[11px] font-medium outline-none focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/30"
@@ -83,7 +83,7 @@ export const ToolsHub: React.FC = () => {
                 variants={fadeUp}
                 key={tool.id}
                 onClick={() => setSelectedTool(tool)}
-                className="group p-7 bg-card border border-border/60 rounded-[24px] cursor-pointer flex flex-col justify-between min-h-[200px] relative overflow-hidden transition-all duration-300 hover:border-primary/30 hover:shadow-sm"
+                className="group p-7 paper-stack cursor-pointer flex flex-col justify-between min-h-[200px] relative overflow-hidden transition-all duration-300 hover:-translate-y-0.5"
               >
                 <div className="space-y-4 relative z-10">
                   <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center border border-border/40 group-hover:border-primary/20 transition-all shadow-none">
@@ -100,8 +100,8 @@ export const ToolsHub: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between pt-4 relative z-10">
-                  <div className="flex items-center space-x-2 text-[9px] font-black text-primary/40 uppercase tracking-[0.2em] group-hover:text-primary transition-colors">
-                    <span>Activate Mask</span>
+                  <div className="flex items-center space-x-2 label-shelf group-hover:text-primary transition-colors">
+                    <span>Open template</span>
                     <Sparkles className="h-3 w-3" />
                   </div>
                   <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all">

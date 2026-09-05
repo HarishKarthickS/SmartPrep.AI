@@ -154,7 +154,7 @@ export const NotesBoard: React.FC = () => {
                   <button
                     onClick={() => setSelectedTag(null)}
                     className={cn(
-                      "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
+                      "px-3 py-1 text-[11px] font-sans transition-all",
                       !selectedTag ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground/60 hover:text-primary"
                     )}
                   >
@@ -165,7 +165,7 @@ export const NotesBoard: React.FC = () => {
                       key={tag}
                       onClick={() => setSelectedTag(tag)}
                       className={cn(
-                        "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center space-x-1.5",
+                        "px-3 py-1 text-[11px] font-sans transition-all flex items-center space-x-1.5",
                         selectedTag === tag ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground/60 hover:text-primary"
                       )}
                     >
@@ -265,7 +265,7 @@ export const NotesBoard: React.FC = () => {
             {isEditing ? (
               <div className="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar">
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black text-primary/40 uppercase tracking-[0.2em] ml-1">Title</label>
+                  <label className="label-shelf ml-1">Title</label>
                   <input
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
@@ -273,7 +273,7 @@ export const NotesBoard: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black text-primary/40 uppercase tracking-[0.2em] ml-1">Metadata Tags</label>
+                  <label className="label-shelf ml-1">Tags</label>
                   <input
                     value={editTags}
                     onChange={(e) => setEditTags(e.target.value)}
@@ -282,7 +282,7 @@ export const NotesBoard: React.FC = () => {
                   />
                 </div>
                 <div className="flex-1 flex flex-col space-y-2 min-h-[300px]">
-                  <label className="text-[9px] font-black text-primary/40 uppercase tracking-[0.2em] ml-1">Content Archive</label>
+                  <label className="label-shelf ml-1">Body</label>
                   <textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}

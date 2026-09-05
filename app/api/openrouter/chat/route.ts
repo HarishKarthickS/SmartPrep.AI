@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
         'HTTP-Referer': 'https://smartprep.ai',
-        'X-Title': 'SmartPrep AI Studio',
+        'X-Title': 'SmartPrep',
       },
       body: JSON.stringify({
         model,

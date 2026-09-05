@@ -96,14 +96,14 @@ export const ToolRunner: React.FC<ToolRunnerProps> = ({ tool, onBack }) => {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col h-full bg-transparent overflow-hidden">
       
       {/* Header */}
-      <div className="h-16 px-8 flex items-center justify-between flex-shrink-0 glass-morphism bg-white/5 border-none z-10">
+      <div className="h-16 px-8 flex items-center justify-between flex-shrink-0 border-b border-border z-10">
         <div className="flex items-center space-x-4">
-          <button onClick={onBack} className="w-10 h-10 rounded-2xl glass-morphism flex items-center justify-center text-muted-foreground hover:text-foreground hover:scale-105 transition-all">
+          <button onClick={onBack} className="w-10 h-10 border border-border bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-all">
             <ChevronLeft className="h-5 w-5" />
           </button>
           <div>
-            <h2 className="text-[15px] font-bold text-foreground">{tool.name}</h2>
-            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mt-0.5">{tool.description}</p>
+            <h2 className="text-[16px] font-serif font-bold text-foreground">{tool.name}</h2>
+            <p className="label-shelf mt-0.5">{tool.description}</p>
           </div>
         </div>
       </div>
@@ -111,38 +111,38 @@ export const ToolRunner: React.FC<ToolRunnerProps> = ({ tool, onBack }) => {
       <div className="flex-1 flex overflow-hidden">
         
         {/* Input Panel */}
-        <div className="w-full md:w-[380px] flex flex-col glass-morphism bg-white/5 border-none m-4 mr-2 rounded-[32px] overflow-hidden">
-          <div className="p-6 border-b border-white/5 flex items-center space-x-3 bg-white/5">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-lg shadow-primary/5">
+        <div className="w-full md:w-[380px] flex flex-col paper-stack m-4 mr-2 overflow-hidden">
+          <div className="p-6 border-b border-border flex items-center space-x-3">
+            <div className="w-9 h-9 bg-secondary border border-border flex items-center justify-center text-primary">
               <BrainCircuit className="h-4.5 w-4.5" />
             </div>
-            <h3 className="font-bold text-foreground tracking-tight">Task Parameters</h3>
+            <h3 className="font-serif font-bold text-foreground">Fill in the blanks</h3>
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
             {tool.inputs.map((input) => (
               <div key={input.id} className="space-y-2">
-                <label className="text-[11px] font-black text-primary uppercase tracking-[0.2em] ml-2">{input.label}</label>
+                <label className="label-shelf ml-1">{input.label}</label>
                 {input.type === 'textarea' ? (
                   <textarea
                     rows={6} value={formValues[input.id] || ''} onChange={(e) => handleInputChange(input.id, e.target.value)}
                     placeholder={input.placeholder} disabled={isStreaming}
-                    className="w-full bg-white/5 border border-white/5 rounded-[24px] p-5 text-sm font-medium outline-none focus:ring-1 focus:ring-primary/40 focus:bg-white/10 transition-all resize-none"
+                    className="w-full bg-card border border-border p-4 text-sm font-serif outline-none focus:ring-1 focus:ring-primary/40 transition-all resize-none"
                   />
                 ) : (
                   <input
                     value={formValues[input.id] || ''} onChange={(e) => handleInputChange(input.id, e.target.value)}
                     placeholder={input.placeholder} disabled={isStreaming}
-                    className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-sm font-medium outline-none focus:ring-1 focus:ring-primary/40 focus:bg-white/10 transition-all"
+                    className="w-full bg-card border border-border p-3 text-sm font-serif outline-none focus:ring-1 focus:ring-primary/40 transition-all"
                   />
                 )}
               </div>
             ))}
           </div>
 
-          <div className="p-6 border-t border-white/5 space-y-4 bg-white/5">
+          <div className="p-6 border-t border-border space-y-4">
             <div className="space-y-2">
-              <label className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-2">Intelligence Profile</label>
+              <label className="label-shelf ml-1">Model</label>
               <select 
                 value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}
                 className="w-full bg-background border border-border/60 rounded-2xl p-4 text-xs font-bold uppercase tracking-widest outline-none focus:ring-1 focus:ring-primary/40 appearance-none transition-all text-foreground"
@@ -160,28 +160,28 @@ export const ToolRunner: React.FC<ToolRunnerProps> = ({ tool, onBack }) => {
             </div>
 
             {isStreaming ? (
-              <Button variant="destructive" onClick={handleAbort} className="w-full h-12 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] shadow-lg shadow-destructive/20 flex items-center justify-center space-x-2 transition-all">
+              <Button variant="destructive" onClick={handleAbort} className="w-full h-12 rounded-sm font-sans text-[13px] flex items-center justify-center space-x-2">
                 <Square className="h-4 w-4 fill-current" />
                 <span>Stop Generation</span>
               </Button>
             ) : (
-              <Button onClick={handleRunTool} className="w-full h-12 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-primary/20 flex items-center justify-center space-x-2 transition-all hover:scale-105 active:scale-95">
+              <Button onClick={handleRunTool} className="w-full h-12 rounded-sm font-sans text-[13px] flex items-center justify-center space-x-2">
                 <Play className="h-4 w-4 fill-current" />
-                <span>Execute Formula</span>
+                <span>Run template</span>
               </Button>
             )}
           </div>
         </div>
 
         {/* Output Panel */}
-        <div className="flex-1 flex flex-col glass-morphism bg-white/5 border-none m-4 ml-2 rounded-[32px] overflow-hidden relative">
+        <div className="flex-1 flex flex-col paper-stack paper-grain m-4 ml-2 overflow-hidden relative">
           <AnimatePresence mode="wait">
             {output ? (
               <motion.div key="output-ready" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={springTransition} className="flex-1 flex flex-col overflow-hidden">
-                <div className="h-14 px-8 border-b border-white/5 flex items-center justify-between flex-shrink-0 bg-white/5">
-                  <div className="flex items-center space-x-2 text-[10px] font-black text-primary uppercase tracking-[0.2em]">
+                <div className="h-14 px-8 border-b border-border flex items-center justify-between flex-shrink-0">
+                  <div className="flex items-center space-x-2 label-shelf">
                     <Sparkles className="h-4 w-4" />
-                    <span>Intelligence Output</span>
+                    <span>Draft</span>
                   </div>
                   <div className="flex space-x-3">
                     <button onClick={() => { navigator.clipboard.writeText(output); setCopied(true); setTimeout(() => setCopied(false), 2000); showToast('Copied', 'success', 'Output copied.'); }} className="flex items-center space-x-2 text-[11px] font-bold text-muted-foreground hover:text-primary transition-all uppercase tracking-widest">
@@ -200,11 +200,11 @@ export const ToolRunner: React.FC<ToolRunnerProps> = ({ tool, onBack }) => {
               </motion.div>
             ) : (
               <motion.div key="output-empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                <div className="w-16 h-16 rounded-3xl glass-morphism mb-6 flex items-center justify-center text-primary/30">
-                  <Play className="h-8 w-8 animate-pulse" />
+                <div className="w-16 h-16 border border-border bg-secondary mb-6 flex items-center justify-center text-primary/50">
+                  <Play className="h-8 w-8" />
                 </div>
-                <h3 className="text-lg font-bold text-foreground">Awaiting Execution</h3>
-                <p className="text-xs text-muted-foreground/60 max-w-xs mt-2">Configure the formula on the left and execute to see the AI intelligence results here.</p>
+                <h3 className="text-lg font-serif font-bold text-foreground">Blank page</h3>
+                <p className="margin-note max-w-xs mt-2">Fill the fields on the left, then run. Output stays on this device until you save a note.</p>
               </motion.div>
             )}
           </AnimatePresence>

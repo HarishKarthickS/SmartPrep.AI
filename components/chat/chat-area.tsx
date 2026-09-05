@@ -491,16 +491,16 @@ Always include 'tsx' or 'html' in the language attribute. The artifact should be
       {/* Immersive Academic Header */}
       <div className={cn(
         "h-16 px-6 flex items-center justify-between flex-shrink-0 z-10 transition-all duration-300",
-        !isZenMode ? "bg-background/80 backdrop-blur-md border-b border-border/40" : "bg-transparent"
+        !isZenMode ? "bg-card/80 border-b border-border" : "bg-transparent"
       )}>
         <div className="min-w-0 flex items-center space-x-4">
-          <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-primary flex-shrink-0">
+          <div className="w-9 h-9 bg-secondary border border-border flex items-center justify-center text-primary flex-shrink-0">
             <GraduationCap className="h-5 w-5" />
           </div>
           <div className="flex flex-col justify-center min-w-0">
             <div className="flex items-center space-x-2">
-              <h2 className="text-[13px] font-bold text-foreground truncate max-w-[200px] leading-tight">
-                {activeSession?.title || 'SmartPrep Workspace'}
+              <h2 className="text-[15px] font-serif font-bold text-foreground truncate max-w-[200px] leading-tight">
+                {activeSession?.title || 'Open notebook'}
               </h2>
               {isTitling && (
                 <Loader2 className="h-3 w-3 animate-spin text-primary/60" />
@@ -512,7 +512,7 @@ Always include 'tsx' or 'html' in the language attribute. The artifact should be
                 onClick={() => setShowModelPicker(true)}
                 className="flex items-center space-x-1.5 group outline-none"
               >
-                <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest group-hover:text-primary transition-colors leading-none">
+                <span className="label-shelf group-hover:text-primary transition-colors leading-none">
                   {activeSession?.model || settings.defaultModel}
                 </span>
                 <ChevronDown className="h-2.5 w-2.5 text-muted-foreground/30 group-hover:text-primary transition-colors" />
@@ -575,7 +575,7 @@ Always include 'tsx' or 'html' in the language attribute. The artifact should be
                 )}
               >
                 <BookOpen className="h-4 w-4" />
-                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Workspace</span>
+                <span className="text-[11px] font-sans leading-none">Margin</span>
               </Button>
 
               {!isEmpty && (
@@ -612,14 +612,14 @@ Always include 'tsx' or 'html' in the language attribute. The artifact should be
               className="max-w-2xl mx-auto flex flex-col space-y-10 py-12"
             >
               <motion.div variants={fadeUp} className="flex flex-col items-center text-center space-y-4">
-                <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center text-primary shadow-sm mb-2">
+                <div className="w-14 h-14 bg-secondary border border-border flex items-center justify-center text-primary mb-2">
                   <Sparkles className="h-7 w-7" />
                 </div>
-                <h3 className="text-xl font-bold text-foreground tracking-tight">
-                  Ready to master something new?
+                <h3 className="text-2xl font-serif font-bold text-foreground">
+                  What are you studying today?
                 </h3>
-                <p className="text-[13px] text-muted-foreground/60 max-w-sm font-medium leading-relaxed">
-                  SmartPrep is your adaptive tutor. Choose a path or ask a question to begin.
+                <p className="margin-note max-w-sm">
+                  Local notes on the right. Ask in the middle. Nothing is hosted as a studio.
                 </p>
               </motion.div>
 
@@ -634,14 +634,14 @@ Always include 'tsx' or 'html' in the language attribute. The artifact should be
                     key={i}
                     variants={fadeUp}
                     onClick={() => handleSelectQuickPrompt(item.text)}
-                    className="group bg-card border border-border/50 hover:border-primary/30 p-5 text-left transition-all duration-300 rounded-[20px] relative overflow-hidden shadow-sm"
+                    className="group paper-stack p-5 text-left transition-all duration-300 relative overflow-hidden hover:-translate-y-0.5"
                   >
                     <div className="flex items-center space-x-2.5 mb-2">
                       <div className="text-primary/60">{item.icon}</div>
-                      <span className="text-[9px] font-black text-primary/40 uppercase tracking-[0.2em]">{item.label}</span>
+                      <span className="label-shelf">{item.label}</span>
                     </div>
-                    <p className="font-bold text-[13px] text-foreground mb-1">{item.title}</p>
-                    <p className="text-[11px] text-muted-foreground/60 leading-relaxed line-clamp-2 font-medium">{item.text}</p>
+                    <p className="font-serif font-bold text-[15px] text-foreground mb-1">{item.title}</p>
+                    <p className="text-[12px] text-muted-foreground leading-relaxed line-clamp-2 font-serif">{item.text}</p>
                   </motion.button>
                 ))}
               </div>
@@ -693,8 +693,8 @@ Always include 'tsx' or 'html' in the language attribute. The artifact should be
             isProcessingFile={isProcessingFile}
           />
           <div className="mt-3 flex justify-center">
-            <p className="text-[9px] text-muted-foreground/40 font-bold uppercase tracking-[0.2em]">
-              SmartPrep AI can make mistakes. Verify critical information.
+            <p className="label-shelf">
+              Verify what you use. This app does not ship a model.
             </p>
           </div>
         </div>
@@ -707,10 +707,10 @@ Always include 'tsx' or 'html' in the language attribute. The artifact should be
         title="Clear Conversation"
         footer={
           <div className="flex space-x-2">
-            <Button variant="ghost" onClick={() => setShowClearConfirm(false)} className="rounded-xl font-bold uppercase tracking-wider text-[10px]">
+            <Button variant="ghost" onClick={() => setShowClearConfirm(false)} className="rounded-sm font-sans text-[12px]">
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleClearContext} className="rounded-xl font-bold uppercase tracking-wider text-[10px]">
+            <Button variant="destructive" onClick={handleClearContext} className="rounded-sm font-sans text-[12px]">
               Clear All
             </Button>
           </div>
@@ -732,14 +732,14 @@ Always include 'tsx' or 'html' in the language attribute. The artifact should be
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-lg bg-card border border-border rounded-[32px] shadow-2xl z-10 flex flex-col overflow-hidden"
+              className="relative w-full max-w-lg paper-stack z-10 flex flex-col overflow-hidden"
             >
               <div className="flex items-center justify-between p-6 border-b border-border/50">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-primary">
+                  <div className="w-8 h-8 bg-secondary border border-border flex items-center justify-center text-primary">
                     <Sparkles className="h-4 w-4" />
                   </div>
-                  <h3 className="text-base font-bold text-foreground tracking-tight">Intelligence</h3>
+                  <h3 className="text-lg font-serif font-bold text-foreground">Pick a model</h3>
                 </div>
                 <button onClick={() => setShowModelPicker(false)} className="w-8 h-8 flex items-center justify-center hover:bg-secondary rounded-full text-muted-foreground transition-all">
                   <X className="h-4 w-4" />

@@ -119,14 +119,14 @@ export const SettingsConsole: React.FC = () => {
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
       
       {/* Header */}
-      <div className="h-16 px-8 flex items-center justify-between flex-shrink-0 bg-background/80 backdrop-blur-md border-b border-border/40 z-10">
+      <div className="h-16 px-8 flex items-center justify-between flex-shrink-0 border-b border-border z-10">
         <div className="flex items-center space-x-4">
-          <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-primary">
+          <div className="w-9 h-9 bg-secondary border border-border flex items-center justify-center text-primary">
             <Sliders className="h-4.5 w-4.5" />
           </div>
           <div>
-            <h2 className="text-[14px] font-bold text-foreground">Settings Console</h2>
-            <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest mt-0.5">Workspace configuration & parameters</p>
+            <h2 className="text-[16px] font-serif font-bold text-foreground">Desk settings</h2>
+            <p className="label-shelf mt-0.5">Key, theme, backup</p>
           </div>
         </div>
       </div>
@@ -137,7 +137,7 @@ export const SettingsConsole: React.FC = () => {
           className="max-w-3xl mx-auto space-y-6"
         >
           {/* API Key Panel */}
-          <motion.div variants={fadeUp} className="bg-card border border-border/60 rounded-[24px] p-8 space-y-6 shadow-sm">
+          <motion.div variants={fadeUp} className="paper-stack p-8 space-y-6">
             <div className="flex items-center space-x-3 mb-2">
               <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-primary">
                 <Key className="h-4 w-4" />
@@ -147,7 +147,7 @@ export const SettingsConsole: React.FC = () => {
 
             <div className="space-y-4">
               <div className="relative group">
-                <label className="text-[9px] font-black text-primary/60 uppercase tracking-[0.2em] ml-1 block mb-1.5">API Key</label>
+                <label className="label-shelf ml-1 block mb-1.5">API Key</label>
                 <div className="relative">
                   <input
                     type={showKey ? 'text' : 'password'}
@@ -193,7 +193,7 @@ export const SettingsConsole: React.FC = () => {
           </motion.div>
 
           {/* Preferences Panel */}
-          <motion.div variants={fadeUp} className="bg-card border border-border/60 rounded-[24px] p-8 space-y-8 shadow-sm">
+          <motion.div variants={fadeUp} className="paper-stack p-8 space-y-8">
             <div className="flex items-center space-x-3 mb-2">
               <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-primary">
                 <Sparkles className="h-4 w-4" />
@@ -202,7 +202,7 @@ export const SettingsConsole: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              <label className="text-[9px] font-black text-primary/60 uppercase tracking-[0.2em] ml-1 block">Theme Profile</label>
+              <label className="label-shelf ml-1 block">Lamp</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
                   { id: 'dark', label: 'Dark Mode', icon: <Moon className="h-4 w-4 text-indigo-400" /> },
@@ -228,7 +228,7 @@ export const SettingsConsole: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
               <div className="space-y-2">
-                <label className="text-[9px] font-black text-primary/60 uppercase tracking-[0.2em] ml-1 block">Font Size</label>
+                <label className="label-shelf ml-1 block">Type size</label>
                 <select 
                   value={settings.fontSize} 
                   onChange={(e) => updateSettings({ fontSize: e.target.value as any })}
@@ -241,7 +241,7 @@ export const SettingsConsole: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[9px] font-black text-primary/60 uppercase tracking-[0.2em] ml-1 block">Auto-Title</label>
+                <label className="label-shelf ml-1 block">Auto-title</label>
                 <select 
                   value={settings.autoTitle ? 'true' : 'false'} 
                   onChange={(e) => updateSettings({ autoTitle: e.target.value === 'true' })}
@@ -254,7 +254,7 @@ export const SettingsConsole: React.FC = () => {
             </div>
 
             <div className="space-y-3 pt-4 border-t border-border/40">
-              <label className="text-[9px] font-black text-primary/60 uppercase tracking-[0.2em] ml-1 block">Default Intelligence Brain</label>
+              <label className="label-shelf ml-1 block">Default model</label>
               <div className="bg-background border border-border/60 rounded-2xl p-5">
                 <ModelSelector 
                   selectedModelId={settings.defaultModel} 
@@ -267,12 +267,12 @@ export const SettingsConsole: React.FC = () => {
           </motion.div>
 
           {/* Backup Panel */}
-          <motion.div variants={fadeUp} className="bg-card border border-border/60 rounded-[24px] p-8 space-y-5 shadow-sm">
+          <motion.div variants={fadeUp} className="paper-stack p-8 space-y-5">
             <div className="flex items-center space-x-3 mb-2">
-              <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-primary">
+              <div className="w-8 h-8 bg-secondary border border-border flex items-center justify-center text-primary">
                 <Database className="h-4 w-4" />
               </div>
-              <h3 className="text-sm font-bold text-foreground tracking-tight">Data Migration</h3>
+              <h3 className="text-sm font-serif font-bold text-foreground">Local backup</h3>
             </div>
 
             <p className="text-[12px] text-muted-foreground/80 leading-relaxed font-medium">

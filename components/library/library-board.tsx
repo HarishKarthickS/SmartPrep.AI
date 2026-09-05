@@ -228,7 +228,7 @@ export const LibraryBoard: React.FC = () => {
                     key={fType}
                     onClick={() => setSelectedTypeFilter(fType as any)}
                     className={cn(
-                      "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
+                      "px-3 py-1 text-[11px] font-sans transition-all",
                       selectedTypeFilter === fType ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground/60 hover:text-primary"
                     )}
                   >
@@ -325,7 +325,7 @@ export const LibraryBoard: React.FC = () => {
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {activeItem.tags.map((tag) => (
-                      <span key={tag} className="px-2 py-0.5 rounded-md bg-secondary text-[9px] font-black text-muted-foreground uppercase tracking-wider">#{tag}</span>
+                      <span key={tag} className="px-2 py-0.5 bg-secondary text-[11px] font-sans text-muted-foreground">#{tag}</span>
                     ))}
                   </div>
                 </div>
@@ -350,10 +350,10 @@ export const LibraryBoard: React.FC = () => {
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-xl bg-card border border-border rounded-[32px] shadow-2xl z-10 flex flex-col max-h-[90vh] overflow-hidden"
+              className="relative w-full max-w-xl paper-stack z-10 flex flex-col max-h-[90vh] overflow-hidden"
             >
               <div className="flex items-center justify-between p-6 border-b border-border/50">
-                <h3 className="text-base font-bold text-foreground tracking-tight">Archive Material</h3>
+                <h3 className="text-base font-serif font-bold text-foreground">Add to the stack</h3>
                 <button onClick={() => setShowAddModal(false)} className="w-8 h-8 flex items-center justify-center hover:bg-secondary rounded-full text-muted-foreground transition-all">
                   <X className="h-4 w-4" />
                 </button>
@@ -361,12 +361,12 @@ export const LibraryBoard: React.FC = () => {
 
               <div className="p-8 flex flex-col space-y-6 overflow-y-auto custom-scrollbar">
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black text-primary/40 uppercase tracking-[0.2em] ml-1">Title</label>
+                  <label className="label-shelf ml-1">Title</label>
                   <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. History Summary" className="w-full bg-background border border-border/60 rounded-xl p-3 text-sm font-bold outline-none focus:ring-1 focus:ring-primary/20 transition-all" />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black text-primary/40 uppercase tracking-[0.2em] ml-1">Category</label>
+                  <label className="label-shelf ml-1">Category</label>
                   <select value={type} onChange={(e) => setType(e.target.value as any)} className="w-full bg-background border border-border/60 rounded-xl p-3 text-[11px] font-bold uppercase tracking-widest outline-none focus:ring-1 focus:ring-primary/20 appearance-none transition-all text-foreground">
                     <option value="document">Document</option>
                     <option value="source">Reference</option>
@@ -376,19 +376,19 @@ export const LibraryBoard: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black text-primary/40 uppercase tracking-[0.2em] ml-1">Tags</label>
+                  <label className="label-shelf ml-1">Tags</label>
                   <input value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder="science, final-exam..." className="w-full bg-background border border-border/60 rounded-xl p-3 text-[11px] font-medium outline-none focus:ring-1 focus:ring-primary/20 transition-all" />
                 </div>
 
                 <div className="space-y-2 flex-1 min-h-[200px] flex flex-col">
-                  <label className="text-[9px] font-black text-primary/40 uppercase tracking-[0.2em] ml-1">Content Archive</label>
+                  <label className="label-shelf ml-1">Pages</label>
                   <textarea value={content} onChange={(e) => setContent(e.target.value)} className="flex-1 w-full bg-background border border-border/60 rounded-2xl p-5 text-[13px] leading-relaxed outline-none focus:ring-1 focus:ring-primary/20 transition-all resize-none font-medium" />
                 </div>
               </div>
 
               <div className="flex items-center justify-end space-x-2 p-6 border-t border-border/50 bg-secondary/20">
                 <Button variant="ghost" onClick={() => setShowAddModal(false)} className="rounded-xl font-bold uppercase tracking-widest text-[10px]">Cancel</Button>
-                <Button onClick={handleAddItem} className="rounded-xl font-bold uppercase tracking-widest text-[10px] shadow-none">Sync Material</Button>
+                <Button onClick={handleAddItem} className="rounded-sm font-sans text-[12px] shadow-none">Add to stack</Button>
               </div>
             </motion.div>
           </div>

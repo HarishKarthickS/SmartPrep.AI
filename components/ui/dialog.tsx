@@ -45,13 +45,13 @@ export const Dialog: React.FC<DialogProps> = ({
       {/* Modal Container */}
       <div
         className={cn(
-          'relative w-full max-w-lg bg-card border border-border rounded-[32px] shadow-2xl z-10 flex flex-col max-h-[85vh] transform transition-all scale-100 opacity-100 animate-in fade-in zoom-in-95 duration-200 overflow-hidden',
+          'relative w-full max-w-lg paper-stack z-10 flex flex-col max-h-[85vh] transform transition-all scale-100 opacity-100 animate-in fade-in zoom-in-95 duration-200 overflow-hidden',
           className
         )}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border/50">
-          <h3 className="text-base font-bold text-foreground tracking-tight">{title}</h3>
+          <h3 className="text-base font-serif font-bold text-foreground">{title}</h3>
           <button 
             onClick={onClose} 
             className="w-8 h-8 flex items-center justify-center hover:bg-secondary rounded-full text-muted-foreground transition-all"

@@ -14,7 +14,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || isLoading}
         className={cn(
-          'inline-flex items-center justify-center font-medium rounded-md transition-all active:scale-[0.98] outline-none disabled:opacity-50 disabled:pointer-events-none cursor-pointer',
+          'inline-flex items-center justify-center font-sans font-medium rounded-sm transition-all active:scale-[0.98] outline-none disabled:opacity-50 disabled:pointer-events-none cursor-pointer',
           {
             // Variants
             'bg-primary text-primary-foreground hover:bg-primary/90 shadow-none': variant === 'primary',

@@ -43,28 +43,28 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     if (!apiKey.trim()) return;
     setApiKey(apiKey);
     updateSettings({ defaultModel: selectedDefaultModel });
-    showToast('Ready', 'success', 'Welcome to the Studio.');
+    showToast('Ready', 'success', 'Desk is set. Your notes stay on this device.');
     onComplete();
   };
 
   return (
-    <div className="min-h-screen w-screen bg-background flex items-center justify-center p-4 relative overflow-hidden select-none">
+    <div className="min-h-screen w-screen desk flex items-center justify-center p-4 relative overflow-hidden select-none">
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={springTransition}
-        className="w-full max-w-sm bg-card border border-border/60 p-8 rounded-[32px] shadow-sm relative z-10 flex flex-col space-y-6"
+        className="w-full max-w-sm paper-stack paper-grain p-8 relative z-10 flex flex-col space-y-6 bookmark-tab"
       >
         <div className="flex flex-col items-center text-center space-y-3">
           <motion.div 
             initial={{ scale: 0.9 }} animate={{ scale: 1 }}
-            className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center text-primary mb-1"
+            className="w-12 h-12 bg-secondary border border-border flex items-center justify-center text-primary mb-1"
           >
-            <Zap className="h-6 w-6 fill-current" />
+            <Zap className="h-6 w-6" />
           </motion.div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">SmartPrep Studio</h1>
-          <p className="text-[13px] text-muted-foreground/70 max-w-[280px] mx-auto leading-relaxed font-medium">
-            Initialize your private learning workspace.
+          <h1 className="text-2xl font-serif font-bold text-foreground">Clear a space</h1>
+          <p className="text-[14px] text-muted-foreground max-w-[280px] mx-auto leading-relaxed font-serif">
+            Paste an OpenRouter key. Chats and notes stay on this machine.
           </p>
         </div>
 
@@ -77,7 +77,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   placeholder="OpenRouter API Key"
                   value={apiKey}
                   onChange={(e) => { setApiKeyInput(e.target.value); }}
-                  className="w-full bg-background border border-border/60 rounded-xl p-3.5 text-sm font-medium outline-none focus:ring-1 focus:ring-primary/20 transition-all pr-12"
+                  className="w-full bg-card border border-border p-3.5 text-sm font-serif outline-none focus:ring-1 focus:ring-primary/30 transition-all pr-12"
                 />
                 <button
                   onClick={() => setShowKey(!showKey)}
@@ -91,7 +91,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 variant="primary" 
                 onClick={handleTestKey} 
                 isLoading={isTesting} 
-                className="w-full h-11 rounded-xl font-bold uppercase tracking-widest text-[10px]"
+                className="w-full h-11 rounded-sm font-sans text-[13px]"
               >
                 Authenticate
               </Button>
@@ -99,10 +99,10 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           ) : (
             <motion.div key="step-2" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
               <div className="flex items-center justify-between px-1">
-                <label className="text-[10px] font-black text-primary/60 uppercase tracking-[0.2em]">Default Brain</label>
+                <label className="label-shelf">Default model</label>
                 <div className="flex items-center space-x-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
                   <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Active</span>
+                  <span className="label-shelf text-emerald-700 dark:text-emerald-400">Connected</span>
                 </div>
               </div>
 
@@ -116,16 +116,16 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               <Button
                 onClick={handleSaveAndStart}
                 disabled={!selectedDefaultModel}
-                className="w-full h-11 rounded-xl font-bold uppercase tracking-widest text-[10px] flex items-center justify-center space-x-2 shadow-none"
+                className="w-full h-11 rounded-sm font-sans text-[13px] flex items-center justify-center space-x-2 shadow-none"
               >
-                <span>Enter Workspace</span>
+                <span>Sit down</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             </motion.div>
           )}
         </div>
 
-        <div className="flex items-center justify-center space-x-3 text-[9px] font-bold text-muted-foreground/30 uppercase tracking-[0.2em] pt-2">
+        <div className="flex items-center justify-center space-x-3 label-shelf pt-2">
           <ShieldCheck className="h-3.5 w-3.5" />
           <span>Private</span>
           <span>•</span>

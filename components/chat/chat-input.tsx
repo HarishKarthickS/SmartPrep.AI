@@ -25,7 +25,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onAbort,
   onFileAttach,
   isProcessingFile = false,
-  placeholder = 'Ask SmartPrep anything...'
+  placeholder = 'Write in the margin…'
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,8 +55,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <div className="relative w-full">
       <div className={cn(
-        "relative bg-card rounded-[24px] border border-border/60 p-2 transition-all duration-300 shadow-sm",
-        "focus-within:border-primary/40 focus-within:shadow-md"
+        "relative bg-card border border-border p-2 transition-all duration-300 paper-stack",
+        "focus-within:border-primary/50"
       )}>
         <textarea
           ref={textareaRef}
@@ -66,7 +66,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={isStreaming && !onAbort}
-          className="w-full bg-transparent outline-none resize-none text-[14px] text-foreground placeholder:text-muted-foreground/40 min-h-[52px] py-4 px-5 max-h-[240px] leading-relaxed font-medium pr-14 custom-scrollbar"
+          className="w-full bg-transparent outline-none resize-none text-[15px] text-foreground placeholder:text-muted-foreground/50 min-h-[52px] py-4 px-5 max-h-[240px] leading-relaxed font-serif pr-14 custom-scrollbar"
         />
 
         <div className="h-11 flex items-center justify-between px-4 pb-1">
@@ -93,7 +93,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               )}
             </Button>
 
-            <div className="flex items-center space-x-1.5 px-2 py-1 rounded-lg bg-secondary/50 border border-border/20 text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.2em]">
+            <div className="flex items-center space-x-1.5 px-2 py-1 border border-border text-[10px] font-sans text-muted-foreground">
               <CornerDownLeft className="h-2.5 w-2.5" />
               <span className="leading-none">Send</span>
             </div>

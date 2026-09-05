@@ -136,7 +136,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className={cn(
           'group relative flex flex-col p-3 rounded-xl cursor-pointer transition-all border select-none mb-2',
           isActive
-            ? 'bg-card border-border/60 shadow-sm'
+            ? 'bg-card border-border shadow-[inset_3px_0_0_hsl(var(--bookmark))]'
             : 'border-transparent text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
         )}
       >
@@ -159,7 +159,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           ) : (
             <span
-              className="flex-1 truncate text-xs font-semibold text-foreground pr-8 leading-tight"
+              className="flex-1 truncate text-sm font-serif text-foreground pr-8 leading-tight"
               onDoubleClick={(e) => startEditing(s.id, s.title, e)}
             >
               {s.title}
@@ -167,7 +167,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        <div className="flex items-center justify-between text-[10px] text-muted-foreground/40 mt-2 font-medium">
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground/60 mt-2 font-sans">
           <span>{s.messages.length} messages</span>
           <span>
             {new Date(s.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
@@ -199,7 +199,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       initial={false}
       animate={isCollapsed ? "collapsed" : "expanded"}
       variants={sidebarVariants}
-      className="h-[calc(100vh-32px)] m-4 rounded-[28px] bg-background border border-border/40 flex flex-col relative select-none overflow-hidden z-20 shadow-sm"
+      className="h-[calc(100vh-32px)] m-4 paper-stack paper-grain flex flex-col relative select-none overflow-hidden z-20"
     >
       {/* Header section */}
       <div className={cn("p-5 flex flex-col space-y-4", isCollapsed && "items-center p-4")}>
@@ -213,12 +213,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 exit={{ opacity: 0, x: -10 }}
                 className="flex items-center space-x-3"
               >
-                <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0">
+                <div className="w-9 h-9 bg-secondary border border-border flex items-center justify-center flex-shrink-0">
                   <GraduationCap className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex flex-col justify-center min-w-0">
-                  <span className="font-bold text-[13px] tracking-tight text-foreground leading-none">SmartPrep</span>
-                  <span className="text-[9px] text-muted-foreground/50 font-bold mt-1 uppercase tracking-wider leading-none">AI Workspace</span>
+                  <span className="font-serif font-bold text-[15px] text-foreground leading-none">SmartPrep</span>
+                  <span className="label-shelf mt-1.5 leading-none">Local desk</span>
                 </div>
               </motion.div>
             ) : (
@@ -227,7 +227,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center"
+                className="w-9 h-9 bg-secondary border border-border flex items-center justify-center"
               >
                 <GraduationCap className="h-5 w-5 text-primary" />
               </motion.div>
@@ -262,7 +262,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-9 bg-secondary/50 border border-border/40 rounded-xl pl-10 pr-4 text-[11px] font-medium outline-none focus:ring-1 focus:ring-primary/20 focus:bg-secondary placeholder:text-muted-foreground/30 transition-all"
+            className="w-full h-9 bg-card border border-border pl-10 pr-4 text-[12px] font-serif outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/40 transition-all"
           />
         </div>
       )}
@@ -308,7 +308,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <motion.div variants={staggerContainer} initial="initial" animate="animate">
             {pinnedSessions.length > 0 && (
               <div className="mb-6">
-                <span className="px-2 text-[9px] font-black text-muted-foreground/20 uppercase tracking-[0.2em] flex items-center mb-3">
+                <span className="px-2 label-shelf flex items-center mb-3">
                   Pinned
                 </span>
                 {pinnedSessions.map(renderSessionItem)}
@@ -317,28 +317,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {today.length > 0 && (
               <div className="mb-6">
-                <span className="px-2 text-[9px] font-black text-muted-foreground/20 uppercase tracking-[0.2em] block mb-3">Today</span>
+                <span className="px-2 label-shelf block mb-3">Today</span>
                 {today.map(renderSessionItem)}
               </div>
             )}
 
             {yesterday.length > 0 && (
               <div className="mb-6">
-                <span className="px-2 text-[9px] font-black text-muted-foreground/20 uppercase tracking-[0.2em] block mb-3">Yesterday</span>
+                <span className="px-2 label-shelf block mb-3">Yesterday</span>
                 {yesterday.map(renderSessionItem)}
               </div>
             )}
 
             {thisWeek.length > 0 && (
               <div className="mb-6">
-                <span className="px-2 text-[9px] font-black text-muted-foreground/20 uppercase tracking-[0.2em] block mb-3">Last 7 Days</span>
+                <span className="px-2 label-shelf block mb-3">Last 7 Days</span>
                 {thisWeek.map(renderSessionItem)}
               </div>
             )}
 
             {older.length > 0 && (
               <div className="mb-6">
-                <span className="px-2 text-[9px] font-black text-muted-foreground/20 uppercase tracking-[0.2em] block mb-3">Older</span>
+                <span className="px-2 label-shelf block mb-3">Older</span>
                 {older.map(renderSessionItem)}
               </div>
             )}
@@ -387,7 +387,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Button
             variant="primary"
             onClick={handleCreateChat}
-            className="text-[10px] font-black uppercase tracking-widest px-4 h-9 rounded-xl shadow-none"
+            className="text-[11px] font-sans px-4 h-9 rounded-sm shadow-none"
           >
             <Plus className="h-3.5 w-3.5 mr-2" />
             New Chat

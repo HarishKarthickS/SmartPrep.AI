@@ -49,7 +49,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   };
 
   const handlePreviewArtifact = (code: string, language: string) => {
-    setActiveArtifact({ code, language, title: 'AI Workspace Preview' });
+    setActiveArtifact({ code, language, title: 'Preview on the stack' });
     setIsRightPanelOpen(true);
     showToast('Artifact Ready', 'info', 'Rendering code in workspace panel.');
   };
@@ -92,10 +92,10 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       {/* Role Indicator */}
       <div
         className={cn(
-          'h-10 w-10 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0 border transition-all duration-300',
+          'h-10 w-10 flex items-center justify-center text-xs font-serif font-bold flex-shrink-0 border transition-all duration-300',
           message.role === 'assistant'
-            ? 'bg-secondary/40 text-primary border-border/40'
-            : 'bg-primary/5 text-primary/40 border-primary/10'
+            ? 'bg-secondary/40 text-primary border-border'
+            : 'bg-accent/10 text-accent border-accent/30'
         )}
       >
         {message.role === 'assistant' ? <GraduationCap className="h-5 w-5" /> : <div className="h-4 w-4 rounded-full bg-primary/20" />}
@@ -103,8 +103,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
       <div className="flex-1 min-w-0 space-y-4">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.2em] leading-none">
-            {message.role === 'assistant' ? 'SmartPrep AI' : 'You'}
+          <span className="margin-note leading-none not-italic">
+            {message.role === 'assistant' ? 'in the margin' : 'your note'}
           </span>
           <span className="text-[9px] text-muted-foreground/30 font-bold uppercase tracking-wider leading-none opacity-0 group-hover:opacity-100 transition-opacity">
             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -134,8 +134,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 >
                   <div className="flex items-center space-x-2.5">
                     <BrainCircuit className="h-3.5 w-3.5 text-muted-foreground/40 group-hover/thought:text-primary/60 transition-colors" />
-                    <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] group-hover/thought:text-primary/60 transition-colors">
-                      Thinking Process
+                    <span className="label-shelf group-hover/thought:text-primary/80 transition-colors">
+                      Scratch work
                     </span>
                   </div>
                   {isThoughtExpanded ? <ChevronUp className="h-3 w-3 text-muted-foreground/20" /> : <ChevronDown className="h-3 w-3 text-muted-foreground/20" />}
@@ -184,14 +184,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                     return (
                       <div className="my-6 rounded-xl border border-border/30 bg-card overflow-hidden shadow-sm">
                         <div className="flex items-center justify-between px-5 py-2.5 border-b border-border/20 bg-muted/30">
-                          <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest font-mono">
+                          <span className="label-shelf font-mono">
                             {language}
                           </span>
                           <div className="flex items-center space-x-4">
                             {(language === 'tsx' || language === 'jsx' || language === 'html' || language === 'javascript' || language === 'js') && (
                               <button
                                 onClick={() => handlePreviewArtifact(codeString, language)}
-                                className="flex items-center space-x-1.5 text-[9px] text-primary hover:text-primary/80 cursor-pointer font-black transition-colors uppercase tracking-widest"
+                                className="flex items-center space-x-1.5 text-[11px] text-primary hover:text-primary/80 cursor-pointer font-sans transition-colors"
                               >
                                 <Play className="h-3 w-3" />
                                 <span>Preview</span>
@@ -202,7 +202,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                                 navigator.clipboard.writeText(codeString);
                                 showToast('Copied', 'success', 'Code copied to clipboard.');
                               }}
-                              className="flex items-center space-x-1.5 text-[9px] text-muted-foreground/40 hover:text-primary cursor-pointer font-black transition-colors uppercase tracking-widest"
+                              className="flex items-center space-x-1.5 text-[11px] text-muted-foreground hover:text-primary cursor-pointer font-sans transition-colors"
                             >
                               <Copy className="h-3 w-3" />
                               <span>Copy</span>
@@ -228,7 +228,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-6 transition-all duration-300 mt-6 pt-4 border-t border-border/10">
             <button
               onClick={handleCopy}
-              className="flex items-center space-x-1.5 text-[9px] text-muted-foreground/40 hover:text-primary cursor-pointer font-black uppercase tracking-widest transition-colors"
+              className="flex items-center space-x-1.5 text-[11px] text-muted-foreground hover:text-primary cursor-pointer font-sans transition-colors"
             >
               {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
               <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -236,7 +236,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
             <button
               onClick={handleFork}
-              className="flex items-center space-x-1.5 text-[9px] text-muted-foreground/40 hover:text-primary cursor-pointer font-black uppercase tracking-widest transition-colors"
+              className="flex items-center space-x-1.5 text-[11px] text-muted-foreground hover:text-primary cursor-pointer font-sans transition-colors"
             >
               <GitFork className="h-3 w-3" />
               <span>Fork</span>
@@ -245,7 +245,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             {message.role === 'assistant' && (
               <button
                 onClick={handleSaveToNotes}
-                className="flex items-center space-x-1.5 text-[9px] text-muted-foreground/40 hover:text-primary cursor-pointer font-black uppercase tracking-widest transition-colors"
+                className="flex items-center space-x-1.5 text-[11px] text-muted-foreground hover:text-primary cursor-pointer font-sans transition-colors"
               >
                 <FileText className="h-3 w-3" />
                 <span>Extract</span>
@@ -255,7 +255,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             {message.role === 'user' && onEditSubmit && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center space-x-1.5 text-[9px] text-muted-foreground/40 hover:text-primary cursor-pointer font-black uppercase tracking-widest transition-colors"
+                className="flex items-center space-x-1.5 text-[11px] text-muted-foreground hover:text-primary cursor-pointer font-sans transition-colors"
               >
                 <Edit className="h-3 w-3" />
                 <span>Refine</span>
@@ -265,7 +265,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             {message.role === 'assistant' && onRetry && (
               <button
                 onClick={onRetry}
-                className="flex items-center space-x-1.5 text-[9px] text-muted-foreground/40 hover:text-primary cursor-pointer font-black uppercase tracking-widest transition-colors"
+                className="flex items-center space-x-1.5 text-[11px] text-muted-foreground hover:text-primary cursor-pointer font-sans transition-colors"
               >
                 <RotateCcw className="h-3 w-3" />
                 <span>Retry</span>

@@ -75,7 +75,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     <div className="space-y-4">
       <div className="flex flex-col space-y-3">
         <div className="flex items-center justify-between px-1">
-          <h4 className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.2em]">Select Intelligence</h4>
+          <h4 className="label-shelf">OpenRouter models</h4>
           <button 
             onClick={() => setIsFreeOnly(!isFreeOnly)}
             className="flex items-center space-x-2 group cursor-pointer"
@@ -126,7 +126,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
               key={model.id}
               onClick={() => onSelect(model.id)}
               className={cn(
-                "w-full p-4 text-left rounded-[20px] border transition-all duration-300 flex flex-col space-y-2 group",
+                "w-full p-4 text-left border transition-all duration-300 flex flex-col space-y-2 group",
                 selectedModelId === model.id 
                   ? "bg-secondary/60 border-primary/30" 
                   : "border-border/40 bg-card hover:bg-secondary/40"
@@ -156,13 +156,13 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
               )}
 
               <div className="flex flex-wrap items-center gap-1.5 px-0.5 pt-1">
-                <div className="flex items-center space-x-1.5 text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest bg-secondary/80 px-2 py-0.5 rounded-md border border-border/40">
+                <div className="flex items-center space-x-1.5 label-shelf bg-secondary/80 px-2 py-0.5 border border-border">
                   <Database className="h-2.5 w-2.5" />
                   <span>{Math.round((model.contextLength || 0) / 1000)}k Context</span>
                 </div>
 
                 {model.pricing && (
-                  <div className="flex items-center space-x-1.5 text-[9px] font-black text-primary/60 uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded-md border border-primary/10">
+                  <div className="flex items-center space-x-1.5 label-shelf px-2 py-0.5 border border-primary/20">
                     <Info className="h-2.5 w-2.5" />
                     <span>${(Number(model.pricing.prompt) * 1000000).toFixed(2)} / 1M</span>
                   </div>

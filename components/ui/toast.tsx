@@ -30,7 +30,7 @@ const ToastItem: React.FC<{
   return (
     <div
       className={cn(
-        'p-4 bg-card border border-border rounded-lg shadow-lg flex items-start space-x-3 pointer-events-auto transform transition-all translate-y-0 opacity-100 animate-in slide-in-from-bottom-5 duration-200',
+        'p-4 paper-stack flex items-start space-x-3 pointer-events-auto transform transition-all translate-y-0 opacity-100 animate-in slide-in-from-bottom-5 duration-200',
         {
           'border-l-4 border-l-emerald-500': toast.type === 'success',
           'border-l-4 border-l-destructive': toast.type === 'error',
@@ -40,7 +40,7 @@ const ToastItem: React.FC<{
     >
       <div className="flex-shrink-0 mt-0.5">{iconMap[toast.type]}</div>
       <div className="flex-1 min-w-0">
-        <h4 className="text-sm font-semibold text-foreground leading-snug">
+        <h4 className="text-sm font-serif font-semibold text-foreground leading-snug">
           {toast.title}
         </h4>
         {toast.description && (
